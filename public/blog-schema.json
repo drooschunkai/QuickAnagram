@@ -1,0 +1,65 @@
+{
+  "articles": [
+    {
+      "id": 1,
+      "category": "Scrabble Strategy",
+      "topics": [
+        "Defensive play: Blocking high-score spots",
+        "Tile tracking for the end game",
+        "How to fish for a bingo",
+        "Hooking: Adding letters to existing words",
+        "Rack balance: Constant vs Vowel ratio"
+      ]
+    },
+    {
+      "id": 2,
+      "category": "Words With Friends",
+      "topics": [
+        "WWF vs Scrabble: Board layout differences",
+        "Using the Tile Bag effectively in WWF",
+        "The Power of the 'J' in WWF",
+        "Winning strategy for WWF Solo Challenge",
+        "Managing multiple games without burn-out"
+      ]
+    },
+    {
+      "id": 3,
+      "category": "Wordle Cheats",
+      "topics": [
+        "Best starting words based on letter frequency",
+        "How to solve Wordle in 3 tries or less",
+        "Hard Mode vs Normal Mode strategy",
+        "The math behind Wordle: Why 'ADIEU' is overrated",
+        "Solving Quordle and Octordle: Multi-grid tips"
+      ]
+    },
+    {
+      "id": 4,
+      "category": "Educational Benefits",
+      "topics": [
+        "How word games improve working memory",
+        "Word games as a tool for ESL learners",
+        "The connection between spelling and cognitive speed",
+        "Parent's guide: Gamifying literacy with unscramblers",
+        "Why crosswords are a proven stress reliever"
+      ]
+    },
+    {
+      "id": 5,
+      "category": "Board Game Reviews",
+      "topics": [
+        "Bananagrams vs Scrabble: Which is better for travel?",
+        "Review: Paperback - The card building word game",
+        "Upwords: Taking word games into the 3rd dimension",
+        "The Best Word Games of 2025: A definitive list",
+        "Digital vs Physical: The evolution of the word board"
+      ]
+    }
+  ],
+  "format_guidelines": {
+    "paragraph_length": "2-3 sentences",
+    "required_elements": ["H1", "H2", "H3", "CTA Widget", "AdSense Slot"],
+    "word_count_target": "1000-1200 words",
+    "meta_tags": ["Title", "Description", "OG:Image", "OG:Title"]
+  }
+}
