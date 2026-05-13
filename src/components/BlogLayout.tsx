@@ -17,23 +17,23 @@ export const BlogLayout = ({ post, onBack, onNavigateToTool, isDarkMode }: BlogL
       <header className="mb-12">
         <button 
           onClick={onBack} 
-          className="flex items-center gap-2 text-teal-600 font-bold mb-8 transition-colors hover:text-teal-500 group"
+          className={`flex items-center gap-2 ${isDarkMode ? 'text-teal-400 hover:text-teal-300' : 'text-teal-600 hover:text-teal-500'} font-bold mb-8 transition-colors group`}
         >
           <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> 
           Back to Blog
         </button>
         
-        <div className="flex items-center gap-3 text-teal-600 font-black uppercase text-[10px] tracking-widest mb-4">
+        <div className={`flex items-center gap-3 ${isDarkMode ? 'text-teal-400' : 'text-teal-600'} font-black uppercase text-[10px] tracking-widest mb-4`}>
           <span className={`px-2 py-1 rounded bg-teal-500/10`}>{post.category}</span>
-          <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-          <span className="text-slate-400">{post.date}</span>
+          <span className={`w-1 h-1 rounded-full ${isDarkMode ? 'bg-slate-700' : 'bg-slate-300'}`}></span>
+          <span className={`${isDarkMode ? 'text-slate-400' : 'text-slate-400'}`}>{post.date}</span>
         </div>
 
         <h1 className={`text-4xl md:text-6xl font-black mb-6 leading-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
           {post.title}
         </h1>
         
-        <p className="text-xl md:text-2xl text-slate-500 leading-relaxed font-medium">
+        <p className={`text-xl md:text-2xl ${isDarkMode ? 'text-slate-400' : 'text-slate-500'} leading-relaxed font-medium`}>
           {post.excerpt}
         </p>
       </header>
@@ -98,7 +98,7 @@ export const BlogLayout = ({ post, onBack, onNavigateToTool, isDarkMode }: BlogL
                   </div>
                   <div className="flex-1 text-center md:text-left">
                     <h4 className={`text-xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Stuck on a tough board?</h4>
-                    <p className="text-slate-500 text-sm mb-0">Use our lightning-fast Word Unscrambler to find your next winning move in seconds.</p>
+                    <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'} text-sm mb-0`}>Use our lightning-fast Word Unscrambler to find your next winning move in seconds.</p>
                   </div>
                   <button 
                     onClick={() => onNavigateToTool('unscramble')}
@@ -123,15 +123,15 @@ export const BlogLayout = ({ post, onBack, onNavigateToTool, isDarkMode }: BlogL
         <div className={`p-8 rounded-3xl ${isDarkMode ? 'bg-slate-900' : 'bg-slate-50'} flex flex-col md:flex-row justify-between items-center gap-8`}>
           <div>
             <h4 className={`font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Was this article helpful?</h4>
-            <p className="text-slate-500 text-sm">Share it with your word-game obsessed friends!</p>
+            <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'} text-sm`}>Share it with your word-game obsessed friends!</p>
           </div>
           <div className="flex gap-4">
-            <button className={`p-4 rounded-2xl ${isDarkMode ? 'bg-slate-800 text-teal-400' : 'bg-white text-teal-600 shadow-sm'} flex items-center gap-2 font-bold hover:scale-105 transition-all`}>
+            <button className={`p-4 rounded-2xl ${isDarkMode ? 'bg-slate-800 text-teal-400 hover:text-teal-300' : 'bg-white text-teal-600 shadow-sm hover:text-teal-500'} flex items-center gap-2 font-bold transition-all`}>
               <Share2 size={18} /> Share
             </button>
             <button 
                onClick={onBack}
-               className={`p-4 rounded-2xl ${isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-white text-slate-400 shadow-sm'} flex items-center gap-2 font-bold hover:text-teal-500 transition-all`}
+               className={`p-4 rounded-2xl ${isDarkMode ? 'bg-slate-800 text-slate-400 hover:text-slate-300' : 'bg-white text-slate-400 shadow-sm hover:text-slate-600'} flex items-center gap-2 font-bold transition-all`}
             >
               <ArrowLeft size={18} /> Back to List
             </button>

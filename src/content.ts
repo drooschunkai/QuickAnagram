@@ -4,6 +4,44 @@ export const ABOUT_CONTENT = {
   values: ["Performance First", "Minimalist Design", "Dictionary Accuracy", "Privacy Focused"]
 };
 
+export const POLICY_CONTENT = {
+  title: "Privacy Policy",
+  lastUpdated: "May 13, 2026",
+  sections: [
+    {
+      title: "Data Privacy",
+      content: "QuickAnagram is built with a 'Local-First' philosophy. When you unscramble words or solve anagrams, the calculations happen entirely within your browser. No letter inputs are ever sent to or stored on our servers."
+    },
+    {
+      title: "Cookies & Storage",
+      content: "We use local storage only to remember your 'Dark Mode' preference. We do not use tracking cookies or analytics that identify you personally."
+    },
+    {
+      title: "External APIs",
+      content: "Our Dictionary feature uses the Free Dictionary API. When you look up a word, that specific word is sent to their API to fetch the definition. No other data is shared."
+    }
+  ]
+};
+
+export const TERMS_CONTENT = {
+  title: "Terms of Service",
+  lastUpdated: "May 13, 2026",
+  sections: [
+    {
+      title: "Fair Usage",
+      content: "QuickAnagram is provided free of charge for personal use. While we encourage using our tools for training and learning, we advise users to follow the specific rules of any competitive game they are participating in."
+    },
+    {
+      title: "Dictionary Disclaimer",
+      content: "Dictionaries are updated frequently. While we aim for high accuracy, we do not guarantee that every word found is valid in every specific version of Scrabble or other word games."
+    },
+    {
+      title: "Availability",
+      content: "We strive to maintain 100% uptime through our lightweight architecture, but we cannot be held responsible for any temporary service interruptions."
+    }
+  ]
+};
+
 export interface FAQItem {
   question: string;
   answer: string;
