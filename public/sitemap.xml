@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.5">
+  <!-- Core Pages -->
+  <url><loc>https://quickanagram.netlify.app/</loc><priority>1.0</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog</loc><priority>0.8</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#dictionary</loc><priority>0.8</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#about</loc><priority>0.5</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#contact</loc><priority>0.5</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#policy</loc><priority>0.3</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#terms</loc><priority>0.3</priority></url>
+
+  <!-- Blog Articles -->
+  <url><loc>https://quickanagram.netlify.app/#blog/longest-words-english</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/historical-anagrams-messages</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/what-is-a-palindrome-50-examples</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/origins-crossword-puzzles</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/how-to-cheat-ethically-word-games</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/highest-scoring-2-letter-scrabble-words</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/high-scoring-words-ending-in-y-z-x</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/scrabble-bingo-7-letter-words</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/scrabble-words-with-no-vowels</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/q-words-without-u-scrabble</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/words-with-friends-vs-scrabble-rules</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/blank-tiles-strategy-words-with-friends</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/best-5-letter-words-words-with-friends</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/blocking-opponents-premium-squares</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/essential-3-letter-words-mobile-puzzles</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/best-starting-words-for-wordle</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/solve-difficult-wordle-puzzles-recovery</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/5-letter-words-ending-in-e-wordle</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/nyt-connections-strategy-guide</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/improve-spelling-bee-score-anagram-solver</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/word-games-cognitive-health-memory</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/top-word-games-kids-vocabulary-spelling</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/science-of-anagrams-brain-processing</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/crossword-puzzle-apps-brain-sharp-aging</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/use-word-unscrambler-vocabulary-building-tool</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/scrabble-vs-bananagrams-vs-upwords</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/best-travel-size-word-games-vacation</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/luxury-wooden-scrabble-board-editions-review</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/unique-word-games-large-groups-party</loc><priority>0.6</priority></url>
+  <url><loc>https://quickanagram.netlify.app/#blog/card-based-word-games-tabletop-fans</loc><priority>0.6</priority></url>
+</urlset>
