@@ -78,24 +78,62 @@ export default function App() {
       setSelectedPost(null);
     }
     window.scrollTo(0, 0);
-    // Update hash for basic SEO/back button support
-    window.location.hash = slug ? `blog/${slug}` : newView;
+    
+    // Update path instead of hash for standard crawlable and indexable SEO pathnames
+    const newPath = newView === 'home'
+      ? '/'
+      : slug
+        ? `/blog/${slug}`
+        : `/${newView}`;
+
+    if (window.location.pathname !== newPath) {
+      window.history.pushState(null, '', newPath);
+    }
   };
 
-  // Handle initial hash routing
-  useEffect(() => {
-    const hash = window.location.hash.replace('#', '');
-    if (hash.startsWith('blog/')) {
-      const slug = hash.split('/')[1];
+  // Path-based routing handler that extracts the route view and blog post slug
+  const handleRouting = useCallback(() => {
+    const path = window.location.pathname;
+    if (path.startsWith('/blog/')) {
+      const slug = path.split('/')[2] || '';
       const post = BLOG_POSTS.find(p => p.id === slug);
       if (post) {
         setView('blog');
         setSelectedPost(post);
+      } else {
+        setView('blog');
+        setSelectedPost(null);
       }
-    } else if (['home', 'blog', 'about', 'contact', 'dictionary', 'policy', 'terms'].includes(hash)) {
-      setView(hash as View);
+    } else {
+      const cleanPath = path.replace('/', '') as View;
+      const matchedView: View = ['home', 'blog', 'about', 'contact', 'dictionary', 'policy', 'terms'].includes(cleanPath)
+        ? cleanPath
+        : (path === '/' ? 'home' : 'home'); // Default fallback to home
+      setView(matchedView);
+      setSelectedPost(null);
     }
   }, []);
+
+  // Handle initial routing and back/forward browser button navigation
+  useEffect(() => {
+    // 1. Support legacy hash links redirection to clean path URLs gracefully
+    const hash = window.location.hash.replace('#', '');
+    if (hash) {
+      let resolvedPath = '/';
+      if (hash.startsWith('blog/')) {
+        const slug = hash.split('/')[1];
+        resolvedPath = `/blog/${slug}`;
+      } else if (['home', 'blog', 'about', 'contact', 'dictionary', 'policy', 'terms'].includes(hash)) {
+        resolvedPath = hash === 'home' ? '/' : `/${hash}`;
+      }
+      window.history.replaceState(null, '', resolvedPath);
+    }
+
+    // 2. Run router & listen to history popstate changes
+    handleRouting();
+    window.addEventListener('popstate', handleRouting);
+    return () => window.removeEventListener('popstate', handleRouting);
+  }, [handleRouting]);
 
   const getCharCounts = (str: string) => {
     const counts: Record<string, number> = {};
