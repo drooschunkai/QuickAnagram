@@ -141,7 +141,7 @@ Realizing that readers needed a mental escape during the war, they finally launc
 ## American vs Cryptic Puzzles
 The American style focuses on synonyms and general knowledge, while the British Cryptic style uses wordplay, anagrams, and hidden indicators. 
 
-Mastering a cryptic crossword is considered the peak of word game skill, often requiring tools like QuickAnagram to decipher the devious clues hidden within the grid.
+Mastering a cryptic crossword is considered the peak of word game skill, often requiring tools like LetterHub to decipher the devious clues hidden within the grid.
 `
   },
   {
@@ -155,7 +155,7 @@ Mastering a cryptic crossword is considered the peak of word game skill, often r
 ## The Training Aid Argument
 Is using a word unscrambler cheating? It depends on *when* you use it. Professional Scrabble players use solvers to study their games after the fact, identifying "missed bingos" and better plumbing.
 
-By using QuickAnagram after a match, you turn a competitive game into a learning opportunity, ensuring you never miss that same 7-letter word again.
+By using LetterHub after a match, you turn a competitive game into a learning opportunity, ensuring you never miss that same 7-letter word again.
 
 ## Family Game Night Ground Rules
 To maintain the spirit of fun, establish clear rules for solver usage:

@@ -1,6 +1,6 @@
 {
-  "name": "QuickAnagram - High Performance Word Unscrambler",
-  "description": "The world's fastest word unscrambler and anagram solver. Find valid words for Scrabble, Words with Friends, and more instantly.",
+  "name": "LetterHub",
+  "description": "LetterHub - Ultimate Word Engine. World's fastest word unscrambler and anagram solver.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

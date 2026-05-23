@@ -43,7 +43,7 @@ const LANGUAGES: Language[] = [
     nativeName: 'العربية',
     flag: '🇸🇦',
     countryCode: 'SA',
-    url: 'https://raw.githubusercontent.com/nizarus/arabic-wordlist/master/arabic-wordlist.txt'
+    url: 'https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/ar/ar_50k.txt'
   },
   {
     code: 'es',
@@ -75,7 +75,7 @@ const LANGUAGES: Language[] = [
     nativeName: 'Italiano',
     flag: '🇮🇹',
     countryCode: 'IT',
-    url: 'https://raw.githubusercontent.com/lorenbrichter/Words/master/Words/it.txt'
+    url: 'https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/it/it_50k.txt'
   },
   {
     code: 'pt',
@@ -83,7 +83,7 @@ const LANGUAGES: Language[] = [
     nativeName: 'Português',
     flag: '🇵🇹',
     countryCode: 'PT',
-    url: 'https://raw.githubusercontent.com/lorenbrichter/Words/master/Words/pt.txt'
+    url: 'https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/pt/pt_50k.txt'
   },
   {
     code: 'nl',
@@ -176,7 +176,19 @@ export default function App() {
         if (!response.ok) throw new Error(`HTTP status ${response.status}`);
         const text = await response.text();
         
-        let words = text.split('\n').map(w => w.trim().toLowerCase());
+        let words = text.split('\n').map(w => {
+          let trimmed = w.trim();
+          // Remove suffix flag annotations (e.g. word/X) in hunspell dic files
+          if (trimmed.includes('/')) {
+            trimmed = trimmed.split('/')[0];
+          }
+          // Remove trailing frequencies (e.g. 'word 358209') in HermitDave frequency files
+          const parts = trimmed.split(/\s+/);
+          if (parts[0]) {
+            return parts[0].toLowerCase();
+          }
+          return '';
+        }).filter(w => w !== '');
         
         // Filter out words that contain punctuation or numbers
         const arRegex = /^[\u0621-\u064A]+$/;
@@ -427,8 +439,8 @@ export default function App() {
 
   const shareWord = async (word: string) => {
     const shareData = {
-      title: `QuickAnagram - ${word}`,
-      text: `Found the word "${word.toUpperCase()}" using QuickAnagram! Check it out:`,
+      title: `LetterHub - ${word}`,
+      text: `Found the word "${word.toUpperCase()}" using LetterHub! Check it out:`,
       url: window.location.href,
     };
 
@@ -440,7 +452,7 @@ export default function App() {
       }
     } else {
       // Fallback: Copy unique share link
-      navigator.clipboard.writeText(`Check out "${word.toUpperCase()}" on QuickAnagram: ${window.location.href}`);
+      navigator.clipboard.writeText(`Check out "${word.toUpperCase()}" on LetterHub: ${window.location.href}`);
       setSharedWord(word);
       setTimeout(() => setSharedWord(null), 2000);
     }
@@ -455,10 +467,10 @@ export default function App() {
       <nav className={`px-6 md:px-12 py-6 flex flex-col border-b ${isDarkMode ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-white/50'} backdrop-blur-md sticky top-0 z-50`}>
         <div className="flex justify-between items-center w-full">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
-            <img src="/logo.svg" alt="QuickAnagram Logo" className={`w-10 h-10 rounded-xl shadow-lg ${isDarkMode ? 'shadow-teal-900/20' : 'shadow-teal-100'} object-contain bg-white p-1`} referrerPolicy="no-referrer" />
+            <img src="/logo.svg" alt="LetterHub Logo" className={`w-10 h-10 rounded-xl shadow-lg ${isDarkMode ? 'shadow-teal-900/20' : 'shadow-teal-100'} object-contain bg-white p-1`} referrerPolicy="no-referrer" />
             <div>
-              <span className={`text-xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'} block leading-tight`}>QuickAnagram</span>
-              <span className={`text-[10px] uppercase tracking-widest ${isDarkMode ? 'text-teal-400' : 'text-teal-600'} font-bold`}>Fast Word Solver</span>
+              <span className={`text-xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'} block leading-tight`}>LetterHub</span>
+              <span className={`text-[10px] uppercase tracking-widest ${isDarkMode ? 'text-teal-400' : 'text-teal-600'} font-bold`}>Ultimate Word Engine</span>
             </div>
           </div>
           
@@ -950,7 +962,7 @@ export default function App() {
               <div className="max-w-4xl mx-auto">
                 <div className="text-center mb-16">
                   <h2 className={`text-3xl md:text-4xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-4`}>Frequently Asked Questions</h2>
-                  <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Everything you need to know about QuickAnagram and word unscrambling.</p>
+                  <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Everything you need to know about LetterHub and word unscrambling.</p>
                 </div>
                 
                 <div className="space-y-4">
@@ -1235,7 +1247,7 @@ export default function App() {
             {!selectedPost ? (
               <div className="py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="text-center mb-12 max-w-2xl mx-auto">
-                  <h1 className={`text-5xl md:text-6xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-6`}>QuickAnagram Blog</h1>
+                  <h1 className={`text-5xl md:text-6xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-6`}>LetterHub Blog</h1>
                   <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'} text-lg`}>Insights, strategies, and the curious history of the English language. Optimized for word game mastery.</p>
                 </div>
 
@@ -1342,7 +1354,7 @@ export default function App() {
               <h1 className={`text-5xl font-black mb-6 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Get in Touch</h1>
               <p className={`text-xl ${isDarkMode ? 'text-slate-400' : 'text-slate-500'} mb-12`}>Have questions? We are all ears.</p>
               <div className="space-y-8">
-                <div className="flex gap-4 items-start"><Mail className={`${isDarkMode ? 'text-teal-400' : 'text-teal-600'}`} /> <div><h4 className={`font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Email</h4><p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>support@quickanagram.app</p></div></div>
+                <div className="flex gap-4 items-start"><Mail className={`${isDarkMode ? 'text-teal-400' : 'text-teal-600'}`} /> <div><h4 className={`font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Email</h4><p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>hello@unscramblerhub.com</p></div></div>
                 <div className="flex gap-4 items-start"><MessageSquare className={`${isDarkMode ? 'text-teal-400' : 'text-teal-600'}`} /> <div><h4 className={`font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Chat</h4><p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Mon-Fri, 9-5 EST</p></div></div>
               </div>
             </div>
@@ -1398,8 +1410,8 @@ export default function App() {
         <div className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-4 gap-12">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <img src="/logo.svg" alt="QuickAnagram" className="w-6 h-6 rounded object-contain bg-white p-0.5" referrerPolicy="no-referrer" />
-              <h4 className="text-white font-bold">QuickAnagram</h4>
+              <img src="/logo.svg" alt="LetterHub" className="w-6 h-6 rounded object-contain bg-white p-0.5" referrerPolicy="no-referrer" />
+              <h4 className="text-white font-bold">LetterHub</h4>
             </div>
             <p className="text-xs">World's fastest word extraction tool.</p>
           </div>
@@ -1415,7 +1427,7 @@ export default function App() {
           <div><h5 className="text-white font-bold mb-4 font-mono uppercase tracking-widest text-[10px]">Privacy</h5><ul className="space-y-2 text-xs"><li><button onClick={() => navigateTo('policy')} className="hover:text-teal-400">Policy</button></li><li><button onClick={() => navigateTo('terms')} className="hover:text-teal-400">Terms</button></li></ul></div>
         </div>
         <div className="max-w-7xl mx-auto w-full pt-12 mt-12 border-t border-slate-800/50 text-[10px] uppercase tracking-widest text-slate-500 font-black">
-           © 2024 QuickAnagram • All Rights Reserved
+           © 2024 LetterHub • All Rights Reserved
         </div>
       </footer>
 
