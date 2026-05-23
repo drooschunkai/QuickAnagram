@@ -2,6 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Core Pages -->
   <url><loc>https://quickanagram.netlify.app/</loc><priority>1.0</priority></url>
+  <url><loc>https://quickanagram.netlify.app/words-az</loc><priority>0.9</priority></url>
   <url><loc>https://quickanagram.netlify.app/blog</loc><priority>0.8</priority></url>
   <url><loc>https://quickanagram.netlify.app/dictionary</loc><priority>0.8</priority></url>
   <url><loc>https://quickanagram.netlify.app/about</loc><priority>0.5</priority></url>

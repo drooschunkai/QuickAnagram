@@ -1,11 +1,11 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Search, Copy, Check, Menu, Info, Zap, Github, ExternalLink, ArrowLeft, Mail, MessageSquare, Book, Share2, X, Loader2, ChevronDown, Sun, Moon } from 'lucide-react';
+import { Search, Copy, Check, Menu, Info, Zap, Github, ExternalLink, ArrowLeft, Mail, MessageSquare, Book, Share2, X, Loader2, ChevronDown, Sun, Moon, Sliders, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ABOUT_CONTENT, FAQ_ITEMS, POLICY_CONTENT, TERMS_CONTENT } from './content.ts';
 import { BLOG_POSTS, BlogPost } from './blogData.ts';
 import { BlogLayout } from './components/BlogLayout.tsx';
 
-type View = 'home' | 'blog' | 'about' | 'contact' | 'dictionary' | 'policy' | 'terms';
+type View = 'home' | 'blog' | 'about' | 'contact' | 'dictionary' | 'policy' | 'terms' | 'words-az';
 
 interface Definition {
   word: string;
@@ -19,7 +19,85 @@ interface Definition {
   }[];
 }
 
-const DICTIONARY_URL = 'https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt';
+interface Language {
+  code: string;
+  name: string;
+  nativeName: string;
+  flag: string;
+  countryCode: string;
+  url: string;
+}
+
+const LANGUAGES: Language[] = [
+  {
+    code: 'en',
+    name: 'English',
+    nativeName: 'English',
+    flag: '🇺🇸',
+    countryCode: 'US',
+    url: 'https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt'
+  },
+  {
+    code: 'ar',
+    name: 'Arabic',
+    nativeName: 'العربية',
+    flag: '🇸🇦',
+    countryCode: 'SA',
+    url: 'https://raw.githubusercontent.com/nizarus/arabic-wordlist/master/arabic-wordlist.txt'
+  },
+  {
+    code: 'es',
+    name: 'Spanish',
+    nativeName: 'Español',
+    flag: '🇪🇸',
+    countryCode: 'ES',
+    url: 'https://raw.githubusercontent.com/lorenbrichter/Words/master/Words/es.txt'
+  },
+  {
+    code: 'fr',
+    name: 'French',
+    nativeName: 'Français',
+    flag: '🇫🇷',
+    countryCode: 'FR',
+    url: 'https://raw.githubusercontent.com/lorenbrichter/Words/master/Words/fr.txt'
+  },
+  {
+    code: 'de',
+    name: 'German',
+    nativeName: 'Deutsch',
+    flag: '🇩🇪',
+    countryCode: 'DE',
+    url: 'https://raw.githubusercontent.com/lorenbrichter/Words/master/Words/de.txt'
+  },
+  {
+    code: 'it',
+    name: 'Italian',
+    nativeName: 'Italiano',
+    flag: '🇮🇹',
+    countryCode: 'IT',
+    url: 'https://raw.githubusercontent.com/lorenbrichter/Words/master/Words/it.txt'
+  },
+  {
+    code: 'pt',
+    name: 'Portuguese',
+    nativeName: 'Português',
+    flag: '🇵🇹',
+    countryCode: 'PT',
+    url: 'https://raw.githubusercontent.com/lorenbrichter/Words/master/Words/pt.txt'
+  },
+  {
+    code: 'nl',
+    name: 'Dutch',
+    nativeName: 'Nederlands',
+    flag: '🇳🇱',
+    countryCode: 'NL',
+    url: 'https://raw.githubusercontent.com/OpenTaal/opentaal-wordlist/master/wordlist.txt'
+  }
+];
+
+const cleanInput = (val: string) => {
+  return val.replace(/[^a-zA-Z\u0621-\u064A\u00C0-\u00FF\u0100-\u017F]/g, '');
+};
 
 export default function App() {
   const [view, setView] = useState<View>('home');
@@ -43,6 +121,35 @@ export default function App() {
     return false;
   });
 
+  // Words Starting & Ending A-Z states
+  const [azType, setAzType] = useState<'starting' | 'ending'>('starting');
+  const [azLetter, setAzLetter] = useState<string>('A');
+  const [azLength, setAzLength] = useState<string | number>('All');
+  const [azPage, setAzPage] = useState<number>(1);
+  const [azSearch, setAzSearch] = useState<string>('');
+
+  // Blog filtering & search states
+  const [blogSearch, setBlogSearch] = useState('');
+  const [blogCategory, setBlogCategory] = useState('All');
+
+  // Mobile menu control toggler
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Advanced filter options for Unscrambler (Starts with, Ends with, Contains, Word length)
+  const [filterStartsWith, setFilterStartsWith] = useState('');
+  const [filterEndsWith, setFilterEndsWith] = useState('');
+  const [filterContains, setFilterContains] = useState('');
+  const [filterWordLength, setFilterWordLength] = useState('');
+  const [isOptionsExpanded, setIsOptionsExpanded] = useState(false);
+
+  // Language selection and dynamic database caching states
+  const [currentLanguage, setCurrentLanguage] = useState<string>('en');
+  const [loadedDictionaries, setLoadedDictionaries] = useState<Record<string, string[]>>({});
+  const [isDictLoading, setIsDictLoading] = useState(false);
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
+
+  const currentLangObj = useMemo(() => LANGUAGES.find(lang => lang.code === currentLanguage) || LANGUAGES[0], [currentLanguage]);
+
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -53,21 +160,58 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  // Load dictionary
+  // Load dictionary dynamically with intelligent caching & diacritics handling
   useEffect(() => {
     async function loadDictionary() {
+      if (loadedDictionaries[currentLanguage]) {
+        setDictionary(loadedDictionaries[currentLanguage]);
+        return;
+      }
+
+      setIsDictLoading(true);
+      setError(null);
+      const selectedLang = LANGUAGES.find(lang => lang.code === currentLanguage) || LANGUAGES[0];
       try {
-        const response = await fetch(DICTIONARY_URL);
+        const response = await fetch(selectedLang.url);
+        if (!response.ok) throw new Error(`HTTP status ${response.status}`);
         const text = await response.text();
-        const words = text.split('\n').map(w => w.trim().toLowerCase()).filter(w => w.length >= 2 && w.length <= 15);
-        setDictionary(words);
+        
+        let words = text.split('\n').map(w => w.trim().toLowerCase());
+        
+        // Filter out words that contain punctuation or numbers
+        const arRegex = /^[\u0621-\u064A]+$/;
+        const latinAccentedRegex = /^[a-z\u00C0-\u00FF\u0100-\u017Fœæß]+$/;
+        
+        words = words.filter(w => {
+          if (w.length < 2 || w.length > 15) return false;
+          if (currentLanguage === 'ar') {
+            return arRegex.test(w);
+          }
+          return latinAccentedRegex.test(w);
+        });
+
+        // Dedup dictionary words
+        const uniqueWords = Array.from(new Set(words));
+
+        setDictionary(uniqueWords);
+        setLoadedDictionaries(prev => ({ ...prev, [currentLanguage]: uniqueWords }));
       } catch (err) {
-        console.error('Failed to load dictionary:', err);
-        setError('Failed to load dictionary. Please refresh.');
+        console.error(`Failed to load dictionary for ${currentLanguage}:`, err);
+        setError(`Failed to load ${selectedLang.name} database. Please check your connection.`);
+      } finally {
+        setIsDictLoading(false);
       }
     }
     loadDictionary();
-  }, []);
+  }, [currentLanguage]);
+
+  // Handle auto-reset and default starting letters in Words A-Z when switching languages
+  useEffect(() => {
+    const defaultLetter = currentLanguage === 'ar' ? 'أ' : 'A';
+    setAzLetter(defaultLetter);
+    setAzPage(1);
+    setAzSearch('');
+  }, [currentLanguage]);
 
   const navigateTo = (newView: View, slug?: string) => {
     setView(newView);
@@ -106,7 +250,7 @@ export default function App() {
       }
     } else {
       const cleanPath = path.replace('/', '') as View;
-      const matchedView: View = ['home', 'blog', 'about', 'contact', 'dictionary', 'policy', 'terms'].includes(cleanPath)
+      const matchedView: View = ['home', 'blog', 'about', 'contact', 'dictionary', 'policy', 'terms', 'words-az'].includes(cleanPath)
         ? cleanPath
         : (path === '/' ? 'home' : 'home'); // Default fallback to home
       setView(matchedView);
@@ -123,7 +267,7 @@ export default function App() {
       if (hash.startsWith('blog/')) {
         const slug = hash.split('/')[1];
         resolvedPath = `/blog/${slug}`;
-      } else if (['home', 'blog', 'about', 'contact', 'dictionary', 'policy', 'terms'].includes(hash)) {
+      } else if (['home', 'blog', 'about', 'contact', 'dictionary', 'policy', 'terms', 'words-az'].includes(hash)) {
         resolvedPath = hash === 'home' ? '/' : `/${hash}`;
       }
       window.history.replaceState(null, '', resolvedPath);
@@ -134,6 +278,72 @@ export default function App() {
     window.addEventListener('popstate', handleRouting);
     return () => window.removeEventListener('popstate', handleRouting);
   }, [handleRouting]);
+
+  // Reset pagination on filter adjustments
+  useEffect(() => {
+    setAzPage(1);
+  }, [azType, azLetter, azLength, azSearch]);
+
+  const alphabet = useMemo(() => {
+    if (currentLanguage === 'ar') {
+      return "أبتثجحخدذرزسشصضطظعغفقكلمنهوي".split("");
+    }
+    return "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+  }, [currentLanguage]);
+
+  // Highly optimized character frequency tracking algorithm and dictionary filters
+  const filteredAzWords = useMemo(() => {
+    if (!dictionary || dictionary.length === 0) return [];
+    
+    const letterLower = azLetter.toLowerCase();
+    const searchLower = azSearch.toLowerCase().trim();
+    
+    const matchesLetter = dictionary.filter(word => {
+      if (azType === 'starting') {
+        return word.startsWith(letterLower);
+      } else {
+        return word.endsWith(letterLower);
+      }
+    });
+
+    let matchesLength = matchesLetter;
+    if (azLength !== 'All') {
+      if (azLength === '9+') {
+        matchesLength = matchesLetter.filter(w => w.length >= 9);
+      } else {
+        const targetLen = Number(azLength);
+        matchesLength = matchesLetter.filter(w => w.length === targetLen);
+      }
+    }
+
+    let matchesSearch = matchesLength;
+    if (searchLower) {
+      matchesSearch = matchesLength.filter(w => w.includes(searchLower));
+    }
+
+    return matchesSearch.sort();
+  }, [dictionary, azType, azLetter, azLength, azSearch]);
+
+  const wordsPerPage = 120;
+  const paginatedAzWords = useMemo(() => {
+    return filteredAzWords.slice(0, azPage * wordsPerPage);
+  }, [filteredAzWords, azPage]);
+
+  // Dynamic Blog Filtering & Category structures
+  const blogCategories = useMemo(() => {
+    return ['All', ...Array.from(new Set(BLOG_POSTS.map(post => post.category)))];
+  }, []);
+
+  const filteredBlogPosts = useMemo(() => {
+    return BLOG_POSTS.filter(post => {
+      const matchesCategory = blogCategory === 'All' || post.category === blogCategory;
+      const matchesSearch = 
+        post.title.toLowerCase().includes(blogSearch.toLowerCase()) ||
+        post.excerpt.toLowerCase().includes(blogSearch.toLowerCase()) ||
+        post.content.toLowerCase().includes(blogSearch.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [blogSearch, blogCategory]);
 
   const getCharCounts = (str: string) => {
     const counts: Record<string, number> = {};
@@ -149,12 +359,24 @@ export default function App() {
     setTimeout(() => {
       const targetCounts = getCharCounts(input);
       const matched: Record<number, string[]> = {};
+      const startsWithVal = mode === 'unscramble' ? filterStartsWith.toLowerCase().trim() : '';
+      const endsWithVal = mode === 'unscramble' ? filterEndsWith.toLowerCase().trim() : '';
+      const containsVal = mode === 'unscramble' ? filterContains.toLowerCase().trim() : '';
+      const lengthVal = mode === 'unscramble' && filterWordLength ? Number(filterWordLength.trim()) : NaN;
+
       for (const word of dictionary) {
         if (mode === 'unscramble') {
           if (word.length > input.length) continue;
         } else {
           if (word.length !== input.length) continue;
         }
+
+        // Apply advanced advanced filters (Starts with, Ends with, Contains, Word length)
+        if (startsWithVal && !word.startsWith(startsWithVal)) continue;
+        if (endsWithVal && !word.endsWith(endsWithVal)) continue;
+        if (containsVal && !word.includes(containsVal)) continue;
+        if (!isNaN(lengthVal) && word.length !== lengthVal) continue;
+
         const wordCounts = getCharCounts(word);
         let possible = true;
         for (const char in wordCounts) {
@@ -172,7 +394,7 @@ export default function App() {
       setResults(matched);
       setIsProcessing(false);
     }, 400);
-  }, [input, dictionary, mode]);
+  }, [input, dictionary, mode, filterStartsWith, filterEndsWith, filterContains, filterWordLength]);
 
   const copyToClipboard = (word: string) => {
     navigator.clipboard.writeText(word);
@@ -230,32 +452,202 @@ export default function App() {
   return (
     <div className={`min-h-screen ${isDarkMode ? 'dark bg-slate-950 text-slate-200' : 'bg-[#fdfdfb] text-slate-800'} font-sans flex flex-col transition-colors duration-300`}>
       {/* Navigation */}
-      <nav className={`px-6 md:px-12 py-6 flex justify-between items-center border-b ${isDarkMode ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-white/50'} backdrop-blur-md sticky top-0 z-50`}>
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
-          <img src="/logo.svg" alt="QuickAnagram Logo" className={`w-10 h-10 rounded-xl shadow-lg ${isDarkMode ? 'shadow-teal-900/20' : 'shadow-teal-100'} object-contain bg-white p-1`} referrerPolicy="no-referrer" />
-          <div>
-            <span className={`text-xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'} block leading-tight`}>QuickAnagram</span>
-            <span className={`text-[10px] uppercase tracking-widest ${isDarkMode ? 'text-teal-400' : 'text-teal-600'} font-bold`}>Fast Word Solver</span>
-          </div>
-        </div>
-        
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium">
-          <div className={`flex gap-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-            <button onClick={() => { navigateTo('home'); setMode('unscramble'); }} className={`${view === 'home' && mode === 'unscramble' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'home' && mode === 'unscramble' ? '' : 'border-transparent'}`}>Unscrambler</button>
-            <button onClick={() => { navigateTo('home'); setMode('anagram'); }} className={`${view === 'home' && mode === 'anagram' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'home' && mode === 'anagram' ? '' : 'border-transparent'}`}>Anagram Solver</button>
-            <button onClick={() => navigateTo('dictionary')} className={`${view === 'dictionary' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'dictionary' ? '' : 'border-transparent'}`}>Dictionary</button>
-            <button onClick={() => navigateTo('blog')} className={`${view === 'blog' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'blog' ? '' : 'border-transparent'}`}>Blog</button>
-            <button onClick={() => navigateTo('about')} className={`${view === 'about' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'about' ? '' : 'border-transparent'}`}>About</button>
+      <nav className={`px-6 md:px-12 py-6 flex flex-col border-b ${isDarkMode ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-white/50'} backdrop-blur-md sticky top-0 z-50`}>
+        <div className="flex justify-between items-center w-full">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
+            <img src="/logo.svg" alt="QuickAnagram Logo" className={`w-10 h-10 rounded-xl shadow-lg ${isDarkMode ? 'shadow-teal-900/20' : 'shadow-teal-100'} object-contain bg-white p-1`} referrerPolicy="no-referrer" />
+            <div>
+              <span className={`text-xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'} block leading-tight`}>QuickAnagram</span>
+              <span className={`text-[10px] uppercase tracking-widest ${isDarkMode ? 'text-teal-400' : 'text-teal-600'} font-bold`}>Fast Word Solver</span>
+            </div>
           </div>
           
-          <button 
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className={`p-2 rounded-xl transition-all ${isDarkMode ? 'bg-slate-800 text-teal-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-            aria-label="Toggle dark mode"
-          >
-            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium">
+            <div className={`flex gap-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+              <button onClick={() => { navigateTo('home'); setMode('unscramble'); }} className={`${view === 'home' && mode === 'unscramble' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'home' && mode === 'unscramble' ? '' : 'border-transparent'}`}>Unscrambler</button>
+              <button onClick={() => { navigateTo('home'); setMode('anagram'); }} className={`${view === 'home' && mode === 'anagram' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'home' && mode === 'anagram' ? '' : 'border-transparent'}`}>Anagram Solver</button>
+              <button onClick={() => navigateTo('words-az')} className={`${view === 'words-az' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'words-az' ? '' : 'border-transparent'}`}>Words A-Z</button>
+              <button onClick={() => navigateTo('dictionary')} className={`${view === 'dictionary' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'dictionary' ? '' : 'border-transparent'}`}>Dictionary</button>
+              <button onClick={() => navigateTo('blog')} className={`${view === 'blog' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'blog' ? '' : 'border-transparent'}`}>Blog</button>
+              <button onClick={() => navigateTo('about')} className={`${view === 'about' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'about' ? '' : 'border-transparent'}`}>About</button>
+            </div>
+            
+            {/* Language Selector */}
+            <div className="relative">
+              <button
+                onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all text-sm font-semibold border ${
+                  isDarkMode 
+                    ? 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700' 
+                    : 'bg-slate-100 border-slate-200 text-slate-705 hover:bg-slate-200'
+                }`}
+                title="Select Language"
+              >
+                {isDictLoading ? (
+                  <Loader2 className="animate-spin text-teal-500" size={16} />
+                ) : (
+                  <span className="text-base leading-none">{currentLangObj.flag}</span>
+                )}
+                <span className="uppercase font-bold tracking-wider text-xs">{currentLangObj.code}</span>
+                <ChevronDown size={14} className={`transition-transform duration-200 ${isLangDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {isLangDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsLangDropdownOpen(false)} />
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className={`absolute right-0 mt-2 w-48 rounded-2xl border-2 shadow-xl z-50 overflow-hidden ${
+                        isDarkMode 
+                          ? 'bg-slate-900 border-slate-800 text-slate-200' 
+                          : 'bg-white border-slate-150 text-slate-805'
+                      }`}
+                    >
+                      <div className="p-1.5 space-y-0.5">
+                        {LANGUAGES.map((lang) => (
+                          <button
+                            key={lang.code}
+                            onClick={() => {
+                              setCurrentLanguage(lang.code);
+                              setIsLangDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs font-semibold transition-colors ${
+                              currentLanguage === lang.code
+                                ? (isDarkMode ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-50 text-teal-700')
+                                : (isDarkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-slate-50 text-slate-650')
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm">{lang.flag}</span>
+                              <span>{lang.nativeName}</span>
+                            </div>
+                            <span className="text-[10px] uppercase font-bold tracking-wider opacity-60">
+                              {lang.countryCode}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <button 
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className={`p-2 rounded-xl transition-all ${isDarkMode ? 'bg-slate-800 text-teal-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              aria-label="Toggle dark mode"
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+          </div>
+
+          {/* Mobile Buttons */}
+          <div className="flex md:hidden items-center gap-2">
+            {/* Mobile Language Selector */}
+            <div className="relative">
+              <button
+                onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl transition-all text-sm font-semibold border ${
+                  isDarkMode 
+                    ? 'bg-slate-800 border-slate-700 text-slate-200' 
+                    : 'bg-slate-100 border-slate-200 text-slate-705'
+                }`}
+                aria-label="Select Language"
+              >
+                {isDictLoading ? (
+                  <Loader2 className="animate-spin text-teal-500" size={14} />
+                ) : (
+                  <span className="text-base leading-none">{currentLangObj.flag}</span>
+                )}
+                <span className="uppercase font-bold text-xs">{currentLangObj.code}</span>
+                <ChevronDown size={12} className={`transition-transform duration-200 ${isLangDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {isLangDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsLangDropdownOpen(false)} />
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className={`absolute right-0 mt-2 w-44 rounded-2xl border shadow-xl z-50 overflow-hidden ${
+                        isDarkMode 
+                          ? 'bg-slate-900 border-slate-800 text-slate-200' 
+                          : 'bg-white border-slate-150 text-slate-805'
+                      }`}
+                    >
+                      <div className="p-1 space-y-0.5">
+                        {LANGUAGES.map((lang) => (
+                          <button
+                            key={lang.code}
+                            onClick={() => {
+                              setCurrentLanguage(lang.code);
+                              setIsLangDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-xs font-semibold transition-colors ${
+                              currentLanguage === lang.code
+                                ? (isDarkMode ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-50 text-teal-700')
+                                : (isDarkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-slate-50 text-slate-650')
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span>{lang.flag}</span>
+                              <span>{lang.nativeName}</span>
+                            </div>
+                            <span className="text-[10px] uppercase font-bold opacity-60">
+                              {lang.countryCode}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <button 
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className={`p-2 rounded-xl transition-all ${isDarkMode ? 'bg-slate-800 text-teal-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              aria-label="Toggle dark mode"
+            >
+              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className={`p-2 rounded-xl transition-all ${isDarkMode ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-800 hover:bg-slate-200'}`}
+              aria-label="Toggle navigation menu"
+            >
+              {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Dropdown Options */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="md:hidden overflow-hidden mt-4"
+            >
+              <div className={`flex flex-col gap-2 p-4 rounded-2xl ${isDarkMode ? 'bg-slate-900 border border-slate-850' : 'bg-slate-50 border border-slate-100'} text-sm font-semibold mt-2`}>
+                <button onClick={() => { navigateTo('home'); setMode('unscramble'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'home' && mode === 'unscramble' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Unscrambler</button>
+                <button onClick={() => { navigateTo('home'); setMode('anagram'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'home' && mode === 'anagram' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Anagram Solver</button>
+                <button onClick={() => { navigateTo('words-az'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'words-az' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Words A-Z</button>
+                <button onClick={() => { navigateTo('dictionary'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'dictionary' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Dictionary</button>
+                <button onClick={() => { navigateTo('blog'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'blog' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Blog</button>
+                <button onClick={() => { navigateTo('about'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'about' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>About</button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       <main className="flex-1 flex flex-col px-6 md:px-12 py-8 max-w-7xl mx-auto w-full">
@@ -267,17 +659,180 @@ export default function App() {
                 <button onClick={() => setMode('unscramble')} className={`px-6 py-2 rounded-xl text-sm font-bold ${mode === 'unscramble' ? (isDarkMode ? 'bg-slate-800 text-teal-400 shadow-sm' : 'bg-white text-teal-600 shadow-sm') : 'text-slate-500'}`}>Unscramble</button>
                 <button onClick={() => setMode('anagram')} className={`px-6 py-2 rounded-xl text-sm font-bold ${mode === 'anagram' ? (isDarkMode ? 'bg-slate-800 text-teal-400 shadow-sm' : 'bg-white text-teal-600 shadow-sm') : 'text-slate-500'}`}>Anagrams</button>
               </div>
-              <h1 className={`text-4xl md:text-5xl font-extrabold ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-4`}>{mode === 'unscramble' ? 'Word Unscrambler' : 'Anagram Solver'}</h1>
-              <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'} text-lg mb-10`}>{mode === 'unscramble' ? 'Find valid words for Scrabble and more.' : 'Find all perfect anagrams.'}</p>
-              <div className="relative group">
-                <input maxLength={15} value={input} onChange={(e) => setInput(e.target.value.replace(/[^a-zA-Z]/g, '').toUpperCase())} onKeyDown={(e) => e.key === 'Enter' && handleProcess()} className={`w-full h-20 px-8 text-3xl font-mono border-2 ${isDarkMode ? 'bg-slate-900 border-slate-800 text-white focus:border-teal-500' : 'bg-white border-slate-200 text-slate-800 focus:border-teal-500'} rounded-3xl outline-none transition-all uppercase`} placeholder="ENTER LETTERS" />
-                <button onClick={handleProcess} disabled={isProcessing} className={`absolute right-4 top-1/2 -translate-y-1/2 h-12 px-8 ${isDarkMode ? 'bg-teal-400 text-slate-950 hover:bg-teal-300' : 'bg-teal-700 text-white hover:bg-teal-800'} font-bold rounded-2xl transition-colors`}>
-                  {isProcessing ? <Loader2 className="animate-spin" /> : 'UNSCRAMBLE'}
+              <h1 className={`text-4xl md:text-5xl font-extrabold ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-4`}>
+                {mode === 'unscramble' ? 'Find words from your letters' : 'Anagram Solver'}
+              </h1>
+              <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'} text-lg mb-10`}>
+                {mode === 'unscramble' 
+                  ? 'Enter any combination of letters and discover all possible words you can make' 
+                  : 'Find all perfect anagrams.'}
+              </p>
+              <div className="group">
+                <input maxLength={15} value={input} onChange={(e) => setInput(cleanInput(e.target.value).toUpperCase())} onKeyDown={(e) => e.key === 'Enter' && handleProcess()} className={`w-full h-20 px-8 text-3xl font-mono border-2 ${isDarkMode ? 'bg-slate-900 border-slate-800 text-white focus:border-teal-500' : 'bg-white border-slate-200 text-slate-800 focus:border-teal-500'} rounded-3xl outline-none transition-all uppercase`} placeholder="ENTER LETTERS" />
+              </div>
+
+              {/* Advanced Filter Options (Starts with, Ends with, Contains, Word length) */}
+              {mode === 'unscramble' && (
+                <div className="mt-8 text-left">
+                  <button
+                    type="button"
+                    onClick={() => setIsOptionsExpanded(!isOptionsExpanded)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                      isDarkMode 
+                        ? 'text-slate-300 hover:bg-slate-900' 
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    <Sliders size={18} className="text-slate-400" />
+                    <span>Options</span>
+                    {isOptionsExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+
+                  <AnimatePresence>
+                    {isOptionsExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden mt-3"
+                      >
+                        <div className={`p-6 rounded-3xl border-2 ${
+                          isDarkMode 
+                            ? 'bg-slate-900/60 border-slate-850/85' 
+                            : 'bg-[#fafafa] border-slate-200'
+                        }`}>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            {/* Starts with */}
+                            <div className="flex flex-col gap-1.5">
+                              <label className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                                Starts with
+                              </label>
+                              <input
+                                type="text"
+                                value={filterStartsWith}
+                                onChange={(e) => setFilterStartsWith(cleanInput(e.target.value).toUpperCase())}
+                                placeholder="e.g., a"
+                                className={`h-11 px-4 rounded-xl border ${
+                                  isDarkMode 
+                                    ? 'bg-slate-950 border-slate-800 text-white focus:border-teal-500' 
+                                    : 'bg-white border-slate-200 text-slate-800 focus:border-teal-500'
+                                } outline-none text-sm transition-all`}
+                              />
+                            </div>
+
+                            {/* Ends with */}
+                            <div className="flex flex-col gap-1.5">
+                              <label className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                                Ends with
+                              </label>
+                              <input
+                                type="text"
+                                value={filterEndsWith}
+                                onChange={(e) => setFilterEndsWith(cleanInput(e.target.value).toUpperCase())}
+                                placeholder="e.g., s"
+                                className={`h-11 px-4 rounded-xl border ${
+                                  isDarkMode 
+                                    ? 'bg-slate-950 border-slate-800 text-white focus:border-teal-500' 
+                                    : 'bg-white border-slate-200 text-slate-800 focus:border-teal-500'
+                                } outline-none text-sm transition-all`}
+                              />
+                            </div>
+
+                            {/* Contains */}
+                            <div className="flex flex-col gap-1.5">
+                              <label className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                                Contains
+                              </label>
+                              <input
+                                type="text"
+                                value={filterContains}
+                                onChange={(e) => setFilterContains(cleanInput(e.target.value).toUpperCase())}
+                                placeholder="e.g., ing"
+                                className={`h-11 px-4 rounded-xl border ${
+                                  isDarkMode 
+                                    ? 'bg-slate-950 border-slate-800 text-white focus:border-teal-500' 
+                                    : 'bg-white border-slate-200 text-slate-800 focus:border-teal-500'
+                                } outline-none text-sm transition-all`}
+                              />
+                            </div>
+
+                            {/* Word length */}
+                            <div className="flex flex-col gap-1.5">
+                              <label className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                                Word length
+                              </label>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                value={filterWordLength}
+                                onChange={(e) => setFilterWordLength(e.target.value.replace(/[^0-9]/g, ''))}
+                                placeholder="e.g., 5"
+                                className={`h-11 px-4 rounded-xl border ${
+                                  isDarkMode 
+                                    ? 'bg-slate-950 border-slate-800 text-white focus:border-teal-500' 
+                                    : 'bg-white border-slate-200 text-slate-800 focus:border-teal-500'
+                                } outline-none text-sm transition-all`}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Reset Filters utility */}
+                          {(filterStartsWith || filterEndsWith || filterContains || filterWordLength) && (
+                            <div className="mt-4 flex justify-end">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setFilterStartsWith('');
+                                  setFilterEndsWith('');
+                                  setFilterContains('');
+                                  setFilterWordLength('');
+                                }}
+                                className="text-xs font-semibold text-rose-500 hover:text-rose-400 transition-colors"
+                              >
+                                Clear Options
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+
+              {/* Call to Action: Unscramble It / Find */}
+              <div className="mt-8 flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleProcess}
+                  disabled={isProcessing || isDictLoading}
+                  className={`px-10 py-4 font-black rounded-2xl shadow-xl active:scale-98 transition-all flex items-center justify-center gap-2 w-full sm:w-auto min-w-[240px] text-base uppercase tracking-wider ${
+                    mode === 'unscramble'
+                      ? 'bg-[#e05300] hover:bg-[#c44700] text-white'
+                      : 'bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400 text-white dark:text-slate-950'
+                  }`}
+                >
+                  {isProcessing ? (
+                    <Loader2 className="animate-spin" size={20} />
+                  ) : (
+                    mode === 'unscramble' ? 'Unscramble It' : 'Find'
+                  )}
                 </button>
               </div>
             </section>
 
-            {totalFound > 0 ? (
+            {isDictLoading ? (
+              <div className="flex flex-col items-center justify-center py-20 animate-pulse">
+                <Loader2 className="animate-spin text-teal-500 mb-4" size={40} />
+                <p className={`text-sm font-semibold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Loading {currentLangObj.name} wordlist database...
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  This takes just a second.
+                </p>
+              </div>
+            ) : totalFound > 0 ? (
               <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className={`mb-8 border-b ${isDarkMode ? 'border-slate-800' : 'border-slate-100'} pb-4`}>
                   <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Found {totalFound} words</h2>
@@ -488,35 +1043,267 @@ export default function App() {
           </div>
         )}
 
+        {view === 'words-az' && (
+          <div className="max-w-7xl mx-auto w-full py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <section className="max-w-3xl mx-auto w-full text-center mb-12">
+              <h1 className={`text-4xl md:text-5xl font-extrabold ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-4`}>
+                A-Z Word Finder
+              </h1>
+              <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'} text-lg mb-10`}>
+                Instant catalogs of competitive board game compatible words. Search and browse lists by starting or ending letter.
+              </p>
+              
+              {/* Type Switcher: Starting With vs Ending With */}
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mb-10">
+                <div className={`inline-flex p-1.5 ${isDarkMode ? 'bg-slate-900' : 'bg-slate-100'} rounded-2xl`}>
+                  <button 
+                    onClick={() => setAzType('starting')} 
+                    className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${azType === 'starting' ? (isDarkMode ? 'bg-slate-800 text-teal-400 shadow-sm' : 'bg-white text-teal-600 shadow-sm') : 'text-slate-500 hover:text-slate-405'}`}
+                  >
+                    Words Starting With
+                  </button>
+                  <button 
+                    onClick={() => setAzType('ending')} 
+                    className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${azType === 'ending' ? (isDarkMode ? 'bg-slate-800 text-teal-400 shadow-sm' : 'bg-white text-teal-600 shadow-sm') : 'text-slate-500 hover:text-slate-405'}`}
+                  >
+                    Words Ending With
+                  </button>
+                </div>
+              </div>
+
+              {/* Letter Selectors Grid */}
+              <div className={`p-6 rounded-3xl ${isDarkMode ? 'bg-slate-900/40 border-slate-800/80' : 'bg-slate-50 border-slate-200'} border mb-10`}>
+                <h3 className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? 'text-teal-400' : 'text-teal-600'} mb-4 text-center`}>
+                  Browse by Letter ({azLetter})
+                </h3>
+                <div className="flex flex-wrap justify-center gap-1.5 md:gap-2">
+                  {alphabet.map((letter) => (
+                    <button
+                      key={letter}
+                      onClick={() => setAzLetter(letter)}
+                      className={`w-9 h-9 md:w-11 md:h-11 rounded-xl text-sm font-black font-mono transition-all flex items-center justify-center ${
+                        azLetter === letter
+                          ? (isDarkMode ? 'bg-teal-400 text-slate-950 shadow-lg shadow-teal-400/10' : 'bg-teal-700 text-white shadow-md shadow-teal-700/10')
+                          : (isDarkMode ? 'bg-slate-800/50 hover:bg-slate-750 text-slate-350 hover:text-white' : 'bg-white hover:bg-slate-100 text-slate-700 hover:border-slate-300 border border-slate-200')
+                      }`}
+                    >
+                      {letter}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Refinement Options Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center text-left">
+                {/* Length pills */}
+                <div className="lg:col-span-8 flex flex-col items-start gap-2">
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                    Filter by Length
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {['All', 2, 3, 4, 5, 6, 7, 8, '9+'].map((len) => (
+                      <button
+                        key={len}
+                        onClick={() => setAzLength(len)}
+                        className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          azLength === len
+                            ? (isDarkMode ? 'bg-teal-400/20 text-teal-400 border border-teal-500/20' : 'bg-teal-50 text-teal-700 border border-teal-200')
+                            : (isDarkMode ? 'bg-slate-900 border border-slate-800 hover:border-slate-705 text-slate-400 hover:text-slate-300' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50')
+                        }`}
+                      >
+                        {len} {len === 'All' ? '' : len === '9+' ? 'Letters' : 'Ltrs'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Inline instant search filter */}
+                <div className="lg:col-span-4 flex flex-col items-start gap-2 w-full">
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                    Filter by characters
+                  </span>
+                  <div className="relative w-full">
+                    <input
+                      type="text"
+                      value={azSearch}
+                      onChange={(e) => setAzSearch(cleanInput(e.target.value))}
+                      placeholder={`Search within ${azLetter} words...`}
+                      className={`w-full h-10 pl-9 pr-8 rounded-xl text-xs border ${
+                        isDarkMode 
+                          ? 'bg-slate-900 border-slate-800 text-white focus:border-teal-500' 
+                          : 'bg-white border-slate-200 text-slate-800 focus:border-teal-500'
+                      } outline-none transition-all`}
+                    />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={13} />
+                    {azSearch && (
+                      <button onClick={() => setAzSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                        <X size={13} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Results listing layout */}
+            {filteredAzWords.length > 0 ? (
+              <div className="flex-1 flex flex-col pt-4">
+                <div className={`mb-6 border-b ${isDarkMode ? 'border-slate-800' : 'border-slate-100'} pb-3 flex justify-between items-center`}>
+                  <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    Words {azType === 'starting' ? 'Starting' : 'Ending'} with "{azLetter}" {azLength !== 'All' ? `(${azLength} Letters)` : ''} ({filteredAzWords.length})
+                  </h2>
+                  <span className="text-xs font-semibold text-slate-400">
+                    Showing {Math.min(filteredAzWords.length, azPage * wordsPerPage)} of {filteredAzWords.length}
+                  </span>
+                </div>
+
+                {/* Response Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 mb-10">
+                  {paginatedAzWords.map((word) => (
+                    <div 
+                      key={word} 
+                      className={`group relative flex flex-col p-4 ${
+                        isDarkMode 
+                          ? 'bg-slate-900 border-slate-800 hover:border-teal-500/50' 
+                          : 'bg-white border-slate-200 hover:border-teal-300'
+                      } border rounded-2xl transition-all shadow-sm justify-between gap-3`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`font-mono font-bold uppercase tracking-wide ${isDarkMode ? 'text-slate-105' : 'text-slate-850'} text-sm`}>
+                          {word}
+                        </span>
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold font-mono">
+                          {word.length}L
+                        </span>
+                      </div>
+                      
+                      <div className="flex gap-1 justify-end mt-1 border-t border-slate-100/10 dark:border-slate-800/15 pt-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => fetchDefinition(word)} 
+                          title="Get Definition" 
+                          className={`p-1.5 rounded ${isDarkMode ? 'hover:bg-teal-400/10 text-slate-405 hover:text-teal-400' : 'hover:bg-teal-500/10 text-slate-400 hover:text-teal-600'} transition-colors`}
+                        >
+                          <Book size={12} />
+                        </button>
+                        <button 
+                          onClick={() => shareWord(word)} 
+                          title="Share" 
+                          className={`p-1.5 rounded ${isDarkMode ? 'hover:bg-teal-400/10 text-slate-405 hover:text-teal-400' : 'hover:bg-teal-500/10 text-slate-405 hover:text-teal-600'} transition-colors`}
+                        >
+                          {sharedWord === word ? <Check size={12} className="text-teal-500" /> : <Share2 size={12} />}
+                        </button>
+                        <button 
+                          onClick={() => copyToClipboard(word)} 
+                          title="Copy Word" 
+                          className={`p-1.5 rounded ${isDarkMode ? 'hover:bg-teal-400/10 text-slate-405 hover:text-teal-400' : 'hover:bg-teal-500/10 text-slate-405 hover:text-teal-600'} transition-colors`}
+                        >
+                          {copiedWord === word ? <Check size={12} className="text-teal-500" /> : <Copy size={12} />}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Pagination Button */}
+                {filteredAzWords.length > paginatedAzWords.length && (
+                  <div className="flex justify-center mb-12">
+                    <button
+                      onClick={() => setAzPage(prev => prev + 1)}
+                      className={`px-8 py-3.5 rounded-2xl font-bold transition-all shadow-sm ${
+                        isDarkMode
+                          ? 'bg-slate-900 border border-slate-800 hover:border-teal-500/35 text-teal-400 hover:bg-slate-850'
+                          : 'bg-white border border-slate-200 hover:border-teal-300 text-teal-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      Load More Words
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className={`text-center py-20 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'} rounded-3xl border-2 border-dashed max-w-xl mx-auto my-6`}>
+                <p className="text-slate-400 font-medium">No matches found with those starting or filter parameters!</p>
+              </div>
+            )}
+            
+            <div id="results-mid-ad" className={`w-full h-[90px] ${isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-600' : 'bg-slate-50 border-slate-200 text-slate-405'} border border-dashed rounded-xl mb-12 flex items-center justify-center text-xs font-mono`}>Advertisements</div>
+          </div>
+        )}
+
         {view === 'blog' && (
           <div className="max-w-7xl mx-auto w-full">
             {!selectedPost ? (
-              <div className="py-12">
-                <div className="text-center mb-20 max-w-2xl mx-auto">
+              <div className="py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="text-center mb-12 max-w-2xl mx-auto">
                   <h1 className={`text-5xl md:text-6xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-6`}>QuickAnagram Blog</h1>
                   <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'} text-lg`}>Insights, strategies, and the curious history of the English language. Optimized for word game mastery.</p>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {BLOG_POSTS.map((post) => (
-                    <motion.div 
-                      key={post.id} 
-                      whileHover={{ y: -8 }}
-                      onClick={() => navigateTo('blog', post.id)} 
-                      className={`p-10 ${isDarkMode ? 'bg-slate-900 border-slate-800/50 hover:shadow-teal-900/10' : 'bg-white border-slate-100 hover:shadow-xl'} border rounded-[2rem] shadow-sm transition-all cursor-pointer flex flex-col h-full`}
-                    >
-                      <div className={`flex justify-between mb-6 text-[10px] font-black ${isDarkMode ? 'text-teal-400' : 'text-teal-600'} uppercase tracking-widest`}>
-                        <span className={`px-2 py-1 ${isDarkMode ? 'bg-teal-400/10' : 'bg-teal-500/10'} rounded`}>{post.category}</span>
-                        <span className={`${isDarkMode ? 'text-slate-400' : 'text-slate-400'}`}>{post.date}</span>
-                      </div>
-                      <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-slate-900'} leading-tight`}>{post.title}</h2>
-                      <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'} text-sm mb-8 flex-1`}>{post.excerpt}</p>
-                      <div className={`mt-auto pt-6 border-t ${isDarkMode ? 'border-slate-800' : 'border-slate-100/10'} flex items-center gap-2 ${isDarkMode ? 'text-teal-400' : 'text-teal-600'} font-bold text-sm`}>
-                        Read Story <ArrowLeft className="rotate-180" size={14} />
-                      </div>
-                    </motion.div>
-                  ))}
+
+                {/* Blog Search & Categories Filter */}
+                <div className="mb-12 max-w-4xl mx-auto space-y-6">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={blogSearch}
+                      onChange={(e) => setBlogSearch(e.target.value)}
+                      placeholder="Search articles on Scrabble, Wordle strategies, history, trivia..."
+                      className={`w-full h-14 pl-12 pr-10 rounded-2xl border-2 ${
+                        isDarkMode 
+                          ? 'bg-slate-900 border-slate-800 text-white focus:border-teal-500' 
+                          : 'bg-white border-slate-200 text-slate-800 focus:border-teal-500'
+                      } outline-none transition-all text-sm shadow-sm`}
+                    />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    {blogSearch && (
+                      <button onClick={() => setBlogSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors">
+                        <X size={18} />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-center gap-1.5 pt-2">
+                    {blogCategories.map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => setBlogCategory(cat)}
+                        className={`px-4.5 py-2 rounded-xl text-xs font-black transition-all ${
+                          blogCategory === cat
+                            ? (isDarkMode ? 'bg-teal-400 text-slate-950 shadow-md shadow-teal-400/20' : 'bg-teal-700 text-white shadow-sm')
+                            : (isDarkMode ? 'bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white' : 'bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100')
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+                
+                {filteredBlogPosts.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {filteredBlogPosts.map((post) => (
+                      <motion.div 
+                        key={post.id} 
+                        whileHover={{ y: -8 }}
+                        onClick={() => navigateTo('blog', post.id)} 
+                        className={`p-10 ${isDarkMode ? 'bg-slate-900 border-slate-800/50 hover:shadow-teal-900/10' : 'bg-white border-slate-100 hover:shadow-xl'} border rounded-[2rem] shadow-sm transition-all cursor-pointer flex flex-col h-full`}
+                      >
+                        <div className={`flex justify-between mb-6 text-[10px] font-black ${isDarkMode ? 'text-teal-400' : 'text-teal-600'} uppercase tracking-widest`}>
+                          <span className={`px-2 py-1 ${isDarkMode ? 'bg-teal-400/10' : 'bg-teal-500/10'} rounded`}>{post.category}</span>
+                          <span className={`${isDarkMode ? 'text-slate-400' : 'text-slate-400'}`}>{post.date}</span>
+                        </div>
+                        <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-slate-900'} leading-tight`}>{post.title}</h2>
+                        <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'} text-sm mb-8 flex-1`}>{post.excerpt}</p>
+                        <div className={`mt-auto pt-6 border-t ${isDarkMode ? 'border-slate-800' : 'border-slate-100/10'} flex items-center gap-2 ${isDarkMode ? 'text-teal-400' : 'text-teal-600'} font-bold text-sm`}>
+                          Read Story <ArrowLeft className="rotate-180" size={14} />
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={`text-center py-20 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'} rounded-3xl border-2 border-dashed max-w-xl mx-auto`}>
+                    <p className="text-slate-400 font-medium">No blog posts found matching your filters. Try a different query!</p>
+                  </div>
+                )}
               </div>
             ) : (
               <BlogLayout 
@@ -616,7 +1403,14 @@ export default function App() {
             </div>
             <p className="text-xs">World's fastest word extraction tool.</p>
           </div>
-          <div><h5 className="text-white font-bold mb-4 font-mono uppercase tracking-widest text-[10px]">Tools</h5><ul className="space-y-2 text-xs"><li><button onClick={() => navigateTo('home')} className="hover:text-teal-400">Scrabble</button></li><li><button onClick={() => navigateTo('home')} className="hover:text-teal-400">Anagrams</button></li></ul></div>
+          <div>
+            <h5 className="text-white font-bold mb-4 font-mono uppercase tracking-widest text-[10px]">Tools</h5>
+            <ul className="space-y-2 text-xs">
+              <li><button onClick={() => navigateTo('home')} className="hover:text-teal-400 text-left">Scrabble Unscrambler</button></li>
+              <li><button onClick={() => navigateTo('home')} className="hover:text-teal-400 text-left">Anagram Solver</button></li>
+              <li><button onClick={() => navigateTo('words-az')} className="hover:text-teal-400 text-left">A-Z Word Finder</button></li>
+            </ul>
+          </div>
           <div><h5 className="text-white font-bold mb-4 font-mono uppercase tracking-widest text-[10px]">Company</h5><ul className="space-y-2 text-xs"><li><button onClick={() => navigateTo('about')} className="hover:text-teal-400">About</button></li><li><button onClick={() => navigateTo('blog')} className="hover:text-teal-400">Blog</button></li><li><button onClick={() => navigateTo('contact')} className="hover:text-teal-400">Contact</button></li></ul></div>
           <div><h5 className="text-white font-bold mb-4 font-mono uppercase tracking-widest text-[10px]">Privacy</h5><ul className="space-y-2 text-xs"><li><button onClick={() => navigateTo('policy')} className="hover:text-teal-400">Policy</button></li><li><button onClick={() => navigateTo('terms')} className="hover:text-teal-400">Terms</button></li></ul></div>
         </div>
