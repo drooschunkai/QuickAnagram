@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://quickanagram.netlify.app/sitemap.xml
+Sitemap: https://unscramblerhub.com/sitemap.xml

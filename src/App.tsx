@@ -291,6 +291,21 @@ export default function App() {
     return () => window.removeEventListener('popstate', handleRouting);
   }, [handleRouting]);
 
+  // Dynamic Cross-Domain Canonical Tag Management pointing to the primary domain: unscramblerhub.com
+  useEffect(() => {
+    const path = window.location.pathname;
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    const canonicalUrl = `https://unscramblerhub.com${normalizedPath === '/' ? '/' : normalizedPath}`;
+
+    let canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link');
+      canonicalLink.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonicalLink);
+    }
+    canonicalLink.setAttribute('href', canonicalUrl);
+  }, [view, selectedPost]);
+
   // Reset pagination on filter adjustments
   useEffect(() => {
     setAzPage(1);
