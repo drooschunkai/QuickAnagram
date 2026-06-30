@@ -99,13 +99,35 @@ const cleanInput = (val: string) => {
   return val.replace(/[^a-zA-Z\u0621-\u064A\u00C0-\u00FF\u0100-\u017F]/g, '');
 };
 
+interface DictionaryWord {
+  original: string;
+  normalized: string;
+}
+
+export const normalizeWord = (word: string, lang: string): string => {
+  if (!word) return '';
+  const lower = word.toLowerCase();
+  if (lang === 'ar') {
+    return lower
+      // Remove diacritics/tashkeel
+      .replace(/[\u064B-\u065F]/g, '')
+      // Normalize Alifs (أ, إ, آ, ٱ to ا)
+      .replace(/[\u0622\u0623\u0625\u0671]/g, '\u0627')
+      // Normalize Taa Marbuta (ة to ه)
+      .replace(/\u0629/g, '\u0647')
+      // Normalize Alif Maksura (ى to ي)
+      .replace(/\u0649/g, '\u064A');
+  }
+  return lower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};
+
 export default function App() {
   const [view, setView] = useState<View>('home');
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [input, setInput] = useState('');
   const [mode, setMode] = useState<'unscramble' | 'anagram'>('unscramble');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [dictionary, setDictionary] = useState<string[]>([]);
+  const [dictionary, setDictionary] = useState<DictionaryWord[]>([]);
   const [results, setResults] = useState<Record<number, string[]>>({});
   const [copiedWord, setCopiedWord] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -144,7 +166,7 @@ export default function App() {
 
   // Language selection and dynamic database caching states
   const [currentLanguage, setCurrentLanguage] = useState<string>('en');
-  const [loadedDictionaries, setLoadedDictionaries] = useState<Record<string, string[]>>({});
+  const [loadedDictionaries, setLoadedDictionaries] = useState<Record<string, DictionaryWord[]>>({});
   const [isDictLoading, setIsDictLoading] = useState(false);
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
 
@@ -190,23 +212,37 @@ export default function App() {
           return '';
         }).filter(w => w !== '');
         
-        // Filter out words that contain punctuation or numbers
-        const arRegex = /^[\u0621-\u064A]+$/;
+        // Filter out words that contain punctuation or numbers (allowing Arabic diacritics)
+        const arRegex = /^[\u0621-\u064A\u064B-\u065F]+$/;
         const latinAccentedRegex = /^[a-z\u00C0-\u00FF\u0100-\u017Fœæß]+$/;
         
-        words = words.filter(w => {
-          if (w.length < 2 || w.length > 15) return false;
+        const dictWords: DictionaryWord[] = [];
+        const seen = new Set<string>();
+
+        words.forEach(w => {
+          let isValid = false;
           if (currentLanguage === 'ar') {
-            return arRegex.test(w);
+            isValid = arRegex.test(w);
+          } else {
+            isValid = latinAccentedRegex.test(w);
           }
-          return latinAccentedRegex.test(w);
+
+          if (isValid) {
+            const norm = normalizeWord(w, currentLanguage);
+            if (norm.length >= 2 && norm.length <= 15) {
+              if (!seen.has(w)) {
+                seen.add(w);
+                dictWords.push({
+                  original: w,
+                  normalized: norm
+                });
+              }
+            }
+          }
         });
 
-        // Dedup dictionary words
-        const uniqueWords = Array.from(new Set(words));
-
-        setDictionary(uniqueWords);
-        setLoadedDictionaries(prev => ({ ...prev, [currentLanguage]: uniqueWords }));
+        setDictionary(dictWords);
+        setLoadedDictionaries(prev => ({ ...prev, [currentLanguage]: dictWords }));
       } catch (err) {
         console.error(`Failed to load dictionary for ${currentLanguage}:`, err);
         setError(`Failed to load ${selectedLang.name} database. Please check your connection.`);
@@ -322,34 +358,34 @@ export default function App() {
   const filteredAzWords = useMemo(() => {
     if (!dictionary || dictionary.length === 0) return [];
     
-    const letterLower = azLetter.toLowerCase();
-    const searchLower = azSearch.toLowerCase().trim();
+    const letterLower = normalizeWord(azLetter, currentLanguage);
+    const searchLower = normalizeWord(azSearch, currentLanguage).trim();
     
     const matchesLetter = dictionary.filter(word => {
       if (azType === 'starting') {
-        return word.startsWith(letterLower);
+        return word.normalized.startsWith(letterLower);
       } else {
-        return word.endsWith(letterLower);
+        return word.normalized.endsWith(letterLower);
       }
     });
 
     let matchesLength = matchesLetter;
     if (azLength !== 'All') {
       if (azLength === '9+') {
-        matchesLength = matchesLetter.filter(w => w.length >= 9);
+        matchesLength = matchesLetter.filter(w => w.normalized.length >= 9);
       } else {
         const targetLen = Number(azLength);
-        matchesLength = matchesLetter.filter(w => w.length === targetLen);
+        matchesLength = matchesLetter.filter(w => w.normalized.length === targetLen);
       }
     }
 
     let matchesSearch = matchesLength;
     if (searchLower) {
-      matchesSearch = matchesLength.filter(w => w.includes(searchLower));
+      matchesSearch = matchesLength.filter(w => w.normalized.includes(searchLower));
     }
 
-    return matchesSearch.sort();
-  }, [dictionary, azType, azLetter, azLength, azSearch]);
+    return matchesSearch.map(w => w.original).sort();
+  }, [dictionary, azType, azLetter, azLength, azSearch, currentLanguage]);
 
   const wordsPerPage = 120;
   const paginatedAzWords = useMemo(() => {
@@ -384,27 +420,28 @@ export default function App() {
     if (!input || input.length < 2) return;
     setIsProcessing(true);
     setTimeout(() => {
-      const targetCounts = getCharCounts(input);
+      const normalizedInput = normalizeWord(input, currentLanguage);
+      const targetCounts = getCharCounts(normalizedInput);
       const matched: Record<number, string[]> = {};
-      const startsWithVal = mode === 'unscramble' ? filterStartsWith.toLowerCase().trim() : '';
-      const endsWithVal = mode === 'unscramble' ? filterEndsWith.toLowerCase().trim() : '';
-      const containsVal = mode === 'unscramble' ? filterContains.toLowerCase().trim() : '';
+      const startsWithVal = mode === 'unscramble' ? normalizeWord(filterStartsWith, currentLanguage).trim() : '';
+      const endsWithVal = mode === 'unscramble' ? normalizeWord(filterEndsWith, currentLanguage).trim() : '';
+      const containsVal = mode === 'unscramble' ? normalizeWord(filterContains, currentLanguage).trim() : '';
       const lengthVal = mode === 'unscramble' && filterWordLength ? Number(filterWordLength.trim()) : NaN;
 
       for (const word of dictionary) {
         if (mode === 'unscramble') {
-          if (word.length > input.length) continue;
+          if (word.normalized.length > normalizedInput.length) continue;
         } else {
-          if (word.length !== input.length) continue;
+          if (word.normalized.length !== normalizedInput.length) continue;
         }
 
         // Apply advanced advanced filters (Starts with, Ends with, Contains, Word length)
-        if (startsWithVal && !word.startsWith(startsWithVal)) continue;
-        if (endsWithVal && !word.endsWith(endsWithVal)) continue;
-        if (containsVal && !word.includes(containsVal)) continue;
-        if (!isNaN(lengthVal) && word.length !== lengthVal) continue;
+        if (startsWithVal && !word.normalized.startsWith(startsWithVal)) continue;
+        if (endsWithVal && !word.normalized.endsWith(endsWithVal)) continue;
+        if (containsVal && !word.normalized.includes(containsVal)) continue;
+        if (!isNaN(lengthVal) && word.normalized.length !== lengthVal) continue;
 
-        const wordCounts = getCharCounts(word);
+        const wordCounts = getCharCounts(word.normalized);
         let possible = true;
         for (const char in wordCounts) {
           if (!targetCounts[char] || wordCounts[char] > targetCounts[char]) {
@@ -413,15 +450,16 @@ export default function App() {
           }
         }
         if (possible) {
-          if (!matched[word.length]) matched[word.length] = [];
-          matched[word.length].push(word);
+          const len = word.original.length;
+          if (!matched[len]) matched[len] = [];
+          matched[len].push(word.original);
         }
       }
       Object.keys(matched).forEach(len => matched[Number(len)].sort());
       setResults(matched);
       setIsProcessing(false);
     }, 400);
-  }, [input, dictionary, mode, filterStartsWith, filterEndsWith, filterContains, filterWordLength]);
+  }, [input, dictionary, mode, filterStartsWith, filterEndsWith, filterContains, filterWordLength, currentLanguage]);
 
   const copyToClipboard = (word: string) => {
     navigator.clipboard.writeText(word);
@@ -683,24 +721,46 @@ export default function App() {
             <div id="top-ad-slot" className={`w-full min-h-[90px] ${isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-600' : 'bg-slate-50 border-slate-200 text-slate-400'} border border-dashed rounded-xl mb-8 flex items-center justify-center text-xs font-mono`}>Advertisements</div>
             <section className="max-w-2xl mx-auto w-full text-center mb-12">
               <div className={`inline-flex p-1 ${isDarkMode ? 'bg-slate-900' : 'bg-slate-100'} rounded-2xl mb-8`}>
-                <button onClick={() => setMode('unscramble')} className={`px-6 py-2 rounded-xl text-sm font-bold ${mode === 'unscramble' ? (isDarkMode ? 'bg-slate-800 text-teal-400 shadow-sm' : 'bg-white text-teal-600 shadow-sm') : 'text-slate-500'}`}>Unscramble</button>
-                <button onClick={() => setMode('anagram')} className={`px-6 py-2 rounded-xl text-sm font-bold ${mode === 'anagram' ? (isDarkMode ? 'bg-slate-800 text-teal-400 shadow-sm' : 'bg-white text-teal-600 shadow-sm') : 'text-slate-500'}`}>Anagrams</button>
+                <button onClick={() => setMode('unscramble')} className={`px-6 py-2 rounded-xl text-sm font-bold ${mode === 'unscramble' ? (isDarkMode ? 'bg-slate-800 text-teal-400 shadow-sm' : 'bg-white text-teal-600 shadow-sm') : 'text-slate-500'}`}>
+                  {currentLanguage === 'ar' ? 'فك تشفير الحروف' : 'Unscramble'}
+                </button>
+                <button onClick={() => setMode('anagram')} className={`px-6 py-2 rounded-xl text-sm font-bold ${mode === 'anagram' ? (isDarkMode ? 'bg-slate-800 text-teal-400 shadow-sm' : 'bg-white text-teal-600 shadow-sm') : 'text-slate-500'}`}>
+                  {currentLanguage === 'ar' ? 'الجناس الناقص' : 'Anagrams'}
+                </button>
               </div>
               <h1 className={`text-4xl md:text-5xl font-extrabold ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-4`}>
-                {mode === 'unscramble' ? 'Find words from your letters' : 'Anagram Solver'}
+                {currentLanguage === 'ar'
+                  ? (mode === 'unscramble' ? 'البحث عن كلمات من حروفك' : 'محلل الجناس الناقص')
+                  : (mode === 'unscramble' ? 'Find words from your letters' : 'Anagram Solver')}
               </h1>
               <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'} text-lg mb-10`}>
-                {mode === 'unscramble' 
-                  ? 'Enter any combination of letters and discover all possible words you can make' 
-                  : 'Find all perfect anagrams.'}
+                {currentLanguage === 'ar'
+                  ? (mode === 'unscramble' 
+                      ? 'أدخل أي مجموعة من الحروف واكتشف جميع الكلمات الممكنة التي يمكنك تشكيلها' 
+                      : 'البحث عن الجناس الناقص والكلمات المطابقة تماماً.')
+                  : (mode === 'unscramble' 
+                      ? 'Enter any combination of letters and discover all possible words you can make' 
+                      : 'Find all perfect anagrams.')}
               </p>
               <div className="group">
-                <input maxLength={15} value={input} onChange={(e) => setInput(cleanInput(e.target.value).toUpperCase())} onKeyDown={(e) => e.key === 'Enter' && handleProcess()} className={`w-full h-20 px-8 text-3xl font-mono border-2 ${isDarkMode ? 'bg-slate-900 border-slate-800 text-white focus:border-teal-500' : 'bg-white border-slate-200 text-slate-800 focus:border-teal-500'} rounded-3xl outline-none transition-all uppercase`} placeholder="ENTER LETTERS" />
+                <input
+                  maxLength={15}
+                  value={input}
+                  onChange={(e) => setInput(cleanInput(e.target.value).toUpperCase())}
+                  onKeyDown={(e) => e.key === 'Enter' && handleProcess()}
+                  dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}
+                  className={`w-full h-20 px-8 text-3xl font-mono border-2 ${
+                    isDarkMode 
+                      ? 'bg-slate-900 border-slate-800 text-white focus:border-teal-500' 
+                      : 'bg-white border-slate-200 text-slate-800 focus:border-teal-500'
+                  } rounded-3xl outline-none transition-all uppercase ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}
+                  placeholder={currentLanguage === 'ar' ? 'أدخل الحروف هنا...' : 'ENTER LETTERS'}
+                />
               </div>
 
               {/* Advanced Filter Options (Starts with, Ends with, Contains, Word length) */}
               {mode === 'unscramble' && (
-                <div className="mt-8 text-left">
+                <div className="mt-8 text-left" dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
                   <button
                     type="button"
                     onClick={() => setIsOptionsExpanded(!isOptionsExpanded)}
@@ -711,7 +771,7 @@ export default function App() {
                     }`}
                   >
                     <Sliders size={18} className="text-slate-400" />
-                    <span>Options</span>
+                    <span>{currentLanguage === 'ar' ? 'خيارات متقدمة' : 'Options'}</span>
                     {isOptionsExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                   </button>
 
@@ -730,63 +790,66 @@ export default function App() {
                         }`}>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                             {/* Starts with */}
-                            <div className="flex flex-col gap-1.5">
-                              <label className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                                Starts with
+                            <div className="flex flex-col gap-1.5 text-left">
+                              <label className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}>
+                                {currentLanguage === 'ar' ? 'يبدأ بـ' : 'Starts with'}
                               </label>
                               <input
                                 type="text"
                                 value={filterStartsWith}
                                 onChange={(e) => setFilterStartsWith(cleanInput(e.target.value).toUpperCase())}
-                                placeholder="e.g., a"
+                                placeholder={currentLanguage === 'ar' ? 'مثال: أ' : 'e.g., a'}
+                                dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}
                                 className={`h-11 px-4 rounded-xl border ${
                                   isDarkMode 
                                     ? 'bg-slate-950 border-slate-800 text-white focus:border-teal-500' 
                                     : 'bg-white border-slate-200 text-slate-800 focus:border-teal-500'
-                                } outline-none text-sm transition-all`}
+                                } outline-none text-sm transition-all ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}
                               />
                             </div>
 
                             {/* Ends with */}
-                            <div className="flex flex-col gap-1.5">
-                              <label className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                                Ends with
+                            <div className="flex flex-col gap-1.5 text-left">
+                              <label className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}>
+                                {currentLanguage === 'ar' ? 'ينتهي بـ' : 'Ends with'}
                               </label>
                               <input
                                 type="text"
                                 value={filterEndsWith}
                                 onChange={(e) => setFilterEndsWith(cleanInput(e.target.value).toUpperCase())}
-                                placeholder="e.g., s"
+                                placeholder={currentLanguage === 'ar' ? 'مثال: س' : 'e.g., s'}
+                                dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}
                                 className={`h-11 px-4 rounded-xl border ${
                                   isDarkMode 
                                     ? 'bg-slate-950 border-slate-800 text-white focus:border-teal-500' 
                                     : 'bg-white border-slate-200 text-slate-800 focus:border-teal-500'
-                                } outline-none text-sm transition-all`}
+                                } outline-none text-sm transition-all ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}
                               />
                             </div>
 
                             {/* Contains */}
-                            <div className="flex flex-col gap-1.5">
-                              <label className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                                Contains
+                            <div className="flex flex-col gap-1.5 text-left">
+                              <label className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}>
+                                {currentLanguage === 'ar' ? 'يحتوي على' : 'Contains'}
                               </label>
                               <input
                                 type="text"
                                 value={filterContains}
                                 onChange={(e) => setFilterContains(cleanInput(e.target.value).toUpperCase())}
-                                placeholder="e.g., ing"
+                                placeholder={currentLanguage === 'ar' ? 'مثال: ين' : 'e.g., ing'}
+                                dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}
                                 className={`h-11 px-4 rounded-xl border ${
                                   isDarkMode 
                                     ? 'bg-slate-950 border-slate-800 text-white focus:border-teal-500' 
                                     : 'bg-white border-slate-200 text-slate-800 focus:border-teal-500'
-                                } outline-none text-sm transition-all`}
+                                } outline-none text-sm transition-all ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}
                               />
                             </div>
 
                             {/* Word length */}
-                            <div className="flex flex-col gap-1.5">
-                              <label className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                                Word length
+                            <div className="flex flex-col gap-1.5 text-left">
+                              <label className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}>
+                                {currentLanguage === 'ar' ? 'طول الكلمة' : 'Word length'}
                               </label>
                               <input
                                 type="text"
@@ -794,12 +857,13 @@ export default function App() {
                                 pattern="[0-9]*"
                                 value={filterWordLength}
                                 onChange={(e) => setFilterWordLength(e.target.value.replace(/[^0-9]/g, ''))}
-                                placeholder="e.g., 5"
+                                placeholder={currentLanguage === 'ar' ? 'مثال: 5' : 'e.g., 5'}
+                                dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}
                                 className={`h-11 px-4 rounded-xl border ${
                                   isDarkMode 
                                     ? 'bg-slate-950 border-slate-800 text-white focus:border-teal-500' 
                                     : 'bg-white border-slate-200 text-slate-800 focus:border-teal-500'
-                                } outline-none text-sm transition-all`}
+                                } outline-none text-sm transition-all ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}
                               />
                             </div>
                           </div>
@@ -843,7 +907,9 @@ export default function App() {
                   {isProcessing ? (
                     <Loader2 className="animate-spin" size={20} />
                   ) : (
-                    mode === 'unscramble' ? 'Unscramble It' : 'Find'
+                    currentLanguage === 'ar'
+                      ? (mode === 'unscramble' ? 'فك تشفير الحروف' : 'بحث')
+                      : (mode === 'unscramble' ? 'Unscramble It' : 'Find')
                   )}
                 </button>
               </div>
@@ -853,22 +919,28 @@ export default function App() {
               <div className="flex flex-col items-center justify-center py-20 animate-pulse">
                 <Loader2 className="animate-spin text-teal-500 mb-4" size={40} />
                 <p className={`text-sm font-semibold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                  Loading {currentLangObj.name} wordlist database...
+                  {currentLanguage === 'ar'
+                    ? `جاري تحميل قاموس اللغة ${currentLangObj.nativeName}...`
+                    : `Loading ${currentLangObj.name} wordlist database...`}
                 </p>
                 <p className="text-xs text-slate-500 mt-1">
-                  This takes just a second.
+                  {currentLanguage === 'ar' ? 'يستغرق هذا ثانية واحدة فقط.' : 'This takes just a second.'}
                 </p>
               </div>
             ) : totalFound > 0 ? (
               <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className={`mb-8 border-b ${isDarkMode ? 'border-slate-800' : 'border-slate-100'} pb-4`}>
-                  <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Found {totalFound} words</h2>
+                  <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'} ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}>
+                    {currentLanguage === 'ar' ? `تم العثور على ${totalFound} كلمة` : `Found ${totalFound} words`}
+                  </h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-20">
                   {sortedLengths.map((len) => (
                     <div key={len} className="flex flex-col">
                       <div className={`flex justify-between items-center mb-5 pb-3 border-b-2 ${isDarkMode ? 'border-slate-800' : 'border-slate-100'}`}>
-                        <h3 className={`font-bold text-lg ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{len} Letter Words</h3>
+                        <h3 className={`font-bold text-lg ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                          {currentLanguage === 'ar' ? `كلمات من ${len} أحرف` : `${len} Letter Words`}
+                        </h3>
                         <span className={`text-xs font-bold ${isDarkMode ? 'text-teal-400 bg-teal-900/40' : 'text-teal-600 bg-teal-50'} px-3 py-1 rounded-full`}>{results[len].length}</span>
                       </div>
                       <div className="space-y-2">
@@ -1347,18 +1419,76 @@ export default function App() {
         )}
 
         {view === 'about' && (
-          <div className="max-w-3xl mx-auto w-full py-20 text-center">
-            <h1 className={`text-5xl font-black mb-8 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Pure Performance.</h1>
-            <p className={`text-xl ${isDarkMode ? 'text-slate-400' : 'text-slate-500'} mb-16`}>{ABOUT_CONTENT.mission}</p>
-            <div className="grid md:grid-cols-2 gap-12 text-left">
-              <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-10 rounded-3xl border`}>
-                <h3 className={`text-2xl font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Our Story</h3>
-                <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{ABOUT_CONTENT.history}</p>
+          <div className="max-w-4xl mx-auto w-full py-16 px-4">
+            <link rel="canonical" href="https://unscramblerhub.com/about" />
+            
+            <h1 className={`text-4xl md:text-5xl font-black mb-6 tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+              About UnscramblerHub
+            </h1>
+            
+            <p className={`text-lg md:text-xl font-bold mb-8 leading-relaxed ${isDarkMode ? 'text-teal-400' : 'text-teal-700'}`}>
+              <strong>UnscramblerHub is the flagship word-game engine of the LetterHub software suite, dedicated to providing lightning-fast, client-side word unscrambling utilities at our official home <a href="https://unscramblerhub.com" className="underline hover:text-teal-500">https://unscramblerhub.com</a>.</strong>
+            </p>
+
+            <div className={`prose max-w-none ${isDarkMode ? 'text-slate-300' : 'text-slate-700'} mb-12 space-y-6 text-base md:text-lg`}>
+              <p className="leading-relaxed">
+                We believe that finding anagrams and checking word definitions should be clean, fast, and secure. That is why we built our solvers to run completely on your device inside your browser without tracking your searches. All of our operations are unified under the LetterHub brand to offer a trustworthy and reliable user experience.
+              </p>
+
+              <h2 className={`text-2xl font-bold mt-10 mb-4 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                Verified Solver Technology & Core Lexicons
+              </h2>
+              
+              <p className="leading-relaxed">
+                To guarantee high utility and original, high-quality answers rather than simple word lists, our platform relies on specialized data processing logic and verified word repositories:
+              </p>
+
+              <div className="overflow-x-auto my-6 border rounded-xl overflow-hidden shadow-sm">
+                <table className="min-w-full divide-y divide-slate-200 text-sm">
+                  <thead className={isDarkMode ? 'bg-slate-900' : 'bg-slate-50'}>
+                    <tr>
+                      <th className="px-4 py-3 text-left font-bold tracking-wider">Service Tool</th>
+                      <th className="px-4 py-3 text-left font-bold tracking-wider">Core Technology</th>
+                      <th className="px-4 py-3 text-left font-bold tracking-wider">Lexicon Base</th>
+                      <th className="px-4 py-3 text-left font-bold tracking-wider">Primary Benefit</th>
+                    </tr>
+                  </thead>
+                  <tbody className={`divide-y divide-slate-200 ${isDarkMode ? 'bg-slate-950 text-slate-300' : 'bg-white text-slate-700'}`}>
+                    <tr>
+                      <td className="px-4 py-3 font-semibold">Word Unscrambler</td>
+                      <td className="px-4 py-3">Client-Side Jumble Solver</td>
+                      <td className="px-4 py-3">SOWPODS & TWL06 Lexicon Lists</td>
+                      <td className="px-4 py-3">Instant letter unscrambling</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3 font-semibold">Anagram Solver</td>
+                      <td className="px-4 py-3">Letter Permutation Array</td>
+                      <td className="px-4 py-3">Standard English Vocabulary</td>
+                      <td className="px-4 py-3">Finds exact matches quickly</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3 font-semibold">Dictionary Lookup</td>
+                      <td className="px-4 py-3">JSON Request Protocol</td>
+                      <td className="px-4 py-3">Free Dictionary API database</td>
+                      <td className="px-4 py-3">Clean definitions and usage</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-              <div className={`${isDarkMode ? 'bg-teal-900/30 border-teal-800' : 'bg-teal-700 border-teal-800'} p-10 rounded-3xl text-white shadow-lg shadow-teal-900/20`}>
-                <h3 className="text-2xl font-bold mb-6">Our Values</h3>
-                <ul className="space-y-4">{ABOUT_CONTENT.values.map(v => <li key={v} className="flex items-center gap-2 font-bold"><Check size={16} className={`${isDarkMode ? 'text-teal-400' : 'text-teal-400'}`} /> {v}</li>)}</ul>
-              </div>
+
+              <h2 className={`text-2xl font-bold mt-10 mb-4 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                Our Commitment to Human Quality
+              </h2>
+              
+              <p className="leading-relaxed">
+                Every solver tool and strategic article published on UnscramblerHub is researched, structured, and managed by experienced human word-game strategists. We manually calibrate our anagram filters, update our word directories, and proofread our guides to ensure we provide highly accurate, human-curated resources for word game lovers around the world.
+              </p>
+            </div>
+
+            <div className="flex justify-center mt-12">
+              <button onClick={() => navigateTo('home')} className={`flex items-center gap-2 ${isDarkMode ? 'text-teal-400 border-teal-400 hover:bg-teal-400/10' : 'text-teal-700 border-teal-700 hover:bg-teal-50 border'} font-bold px-6 py-3 rounded-2xl transition-colors`}>
+                <ArrowLeft size={18} /> Back to Solver
+              </button>
             </div>
           </div>
         )}
@@ -1403,20 +1533,118 @@ export default function App() {
         )}
 
         {view === 'terms' && (
-          <div className="max-w-3xl mx-auto w-full py-20">
-            <h1 className={`text-5xl font-black mb-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{TERMS_CONTENT.title}</h1>
-            <p className="text-slate-500 mb-12">Last Updated: {TERMS_CONTENT.lastUpdated}</p>
-            <div className="space-y-12">
-              {TERMS_CONTENT.sections.map((section, idx) => (
-                <div key={idx}>
-                  <h3 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{section.title}</h3>
-                  <p className={`text-lg leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{section.content}</p>
-                </div>
-              ))}
+          <div className="max-w-4xl mx-auto w-full py-16 px-4">
+            <link rel="canonical" href="https://unscramblerhub.com/terms" />
+            
+            <h1 className={`text-4xl md:text-5xl font-black mb-6 tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+              Terms of Service & Disclaimer
+            </h1>
+            
+            <p className="text-slate-500 mb-8">Last Updated: June 29, 2026</p>
+
+            <div className={`p-6 rounded-2xl mb-10 border ${isDarkMode ? 'bg-slate-950/50 border-teal-500/20 text-teal-400' : 'bg-teal-50/50 border-teal-700/20 text-teal-900'} text-base md:text-lg leading-relaxed`}>
+              <strong>By using the word tools, unscrambling engines, and dictionary search forms at UnscramblerHub—the flagship web application of the LetterHub software suite—you fully agree to these simple Terms of Service, Acceptable Use rules, and Third-Party Intellectual Property Disclaimers.</strong>
             </div>
-            <button onClick={() => navigateTo('home')} className={`mt-16 flex items-center gap-2 ${isDarkMode ? 'text-teal-400' : 'text-teal-600'} font-bold`}>
-              <ArrowLeft size={18} /> Back to Solver
-            </button>
+
+            <div className={`prose max-w-none ${isDarkMode ? 'text-slate-300' : 'text-slate-700'} space-y-8 text-base md:text-lg`}>
+              
+              <section>
+                <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                  1. Acceptable Use
+                </h2>
+                <p className="leading-relaxed">
+                  The tools and word finders provided at <a href="https://unscramblerhub.com" className="font-semibold underline hover:text-teal-500">https://unscramblerhub.com</a> are meant to help you as an educational and recreational word-game helper. You are welcome to input jumbled letters to find valid words, learn anagram paths, and improve your spelling skills. Automated web scraping, bots, and trying to overload our client-side systems are not permitted.
+                </p>
+              </section>
+
+              <section>
+                <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                  2. Third-Party Trademarks (Disclaimer)
+                </h2>
+                <p className="leading-relaxed mb-4">
+                  To keep things clear for our visitors and search networks, we declare that our site is completely independent of all official game brands:
+                </p>
+                <div className={`p-6 rounded-xl border ${isDarkMode ? 'bg-slate-900 border-red-500/10 text-slate-300' : 'bg-red-50/30 border-red-200 text-slate-700'} text-sm leading-relaxed mb-6`}>
+                  <strong>TRADEMARK NOTICE:</strong> UnscramblerHub and LetterHub are completely independent digital properties. We are NOT affiliated, associated, authorized, endorsed by, or in any way officially connected with Mattel, Hasbro, Scrabble, Words with Friends, Zynga, or The New York Times (Wordle). All trademarks and registered logos are the property of their respective owners, and our educational word solver is offered strictly under fair-use guidelines.
+                </div>
+              </section>
+
+              <section>
+                <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                  3. Ads, Cookies & Monetization
+                </h2>
+                <p className="leading-relaxed">
+                  We display programmatic advertisements served by third-party networks like Google AdSense to keep our word solvers 100% free. By using this site, you agree to cookie tracking as described in our <a href="https://unscramblerhub.com/policy" onClick={(e) => { e.preventDefault(); navigateTo('policy'); }} className="font-semibold underline hover:text-teal-500">Privacy Policy</a>. You can manage your ad personalization settings at any time.
+                </p>
+              </section>
+
+              <section>
+                <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                  4. Tool Limits & Operating Guidelines
+                </h2>
+                <p className="leading-relaxed mb-4">
+                  The following simple table defines the guidelines and limits of our word finder services:
+                </p>
+
+                <div className="overflow-x-auto my-6 border rounded-xl overflow-hidden shadow-sm">
+                  <table className="min-w-full divide-y divide-slate-200 text-sm">
+                    <thead className={isDarkMode ? 'bg-slate-900' : 'bg-slate-50'}>
+                      <tr>
+                        <th className="px-4 py-3 text-left font-bold tracking-wider">Service Route</th>
+                        <th className="px-4 py-3 text-left font-bold tracking-wider">Usage Category</th>
+                        <th className="px-4 py-3 text-left font-bold tracking-wider">Operational Limit</th>
+                        <th className="px-4 py-3 text-left font-bold tracking-wider">Privacy Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className={`divide-y divide-slate-200 ${isDarkMode ? 'bg-slate-950 text-slate-300' : 'bg-white text-slate-700'}`}>
+                      <tr>
+                        <td className="px-4 py-3 font-semibold">Word Unscrambler</td>
+                        <td className="px-4 py-3">Educational Helper</td>
+                        <td className="px-4 py-3">Up to 15 Letters per Search</td>
+                        <td className="px-4 py-3">100% client-side browser processing</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-3 font-semibold">Anagram Solver</td>
+                        <td className="px-4 py-3">Letter Permutations</td>
+                        <td className="px-4 py-3">Finds exact anagram matches</td>
+                        <td className="px-4 py-3">No search letters are ever saved</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-3 font-semibold">Dictionary Lookup</td>
+                        <td className="px-4 py-3">Spelling & Meanings</td>
+                        <td className="px-4 py-3">Fetch dynamic definitions</td>
+                        <td className="px-4 py-3">Only word queries sent to external API</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section>
+                <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                  5. No Warranties & Limitations
+                </h2>
+                <p className="leading-relaxed">
+                  All services, word lists, point values, and definitions are provided on an "as-is" and "as-available" basis. Dictionaries can change, so we cannot guarantee 100% agreement with live game tournament rules or individual boards. We are not responsible for any competitive gameplay losses, search discrepancies, or temporary offline service issues.
+                </p>
+              </section>
+
+              <section>
+                <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                  6. Contact Us
+                </h2>
+                <p className="leading-relaxed">
+                  If you have questions about trademarks, terms, or server setups, please reach out via our official contact page at <a href="https://unscramblerhub.com/contact" onClick={(e) => { e.preventDefault(); navigateTo('contact'); }} className="font-semibold underline hover:text-teal-500">https://unscramblerhub.com/contact</a> or send an email directly to <strong>hello@unscramblerhub.com</strong>.
+                </p>
+              </section>
+
+            </div>
+
+            <div className="flex justify-center mt-12">
+              <button onClick={() => navigateTo('home')} className={`flex items-center gap-2 ${isDarkMode ? 'text-teal-400 border-teal-400 hover:bg-teal-400/10' : 'text-teal-700 border-teal-700 hover:bg-teal-50 border'} font-bold px-6 py-3 rounded-2xl transition-colors`}>
+                <ArrowLeft size={18} /> Back to Solver
+              </button>
+            </div>
           </div>
         )}
       </main>

@@ -6,19 +6,27 @@ export const ABOUT_CONTENT = {
 
 export const POLICY_CONTENT = {
   title: "Privacy Policy",
-  lastUpdated: "May 13, 2026",
+  lastUpdated: "June 29, 2026",
   sections: [
     {
-      title: "Data Privacy",
-      content: "LetterHub is built with a 'Local-First' philosophy. When you unscramble words or solve anagrams, the calculations happen entirely within your browser. No letter inputs are ever sent to or stored on our servers."
+      title: "Our Brand & Domain Integration",
+      content: "UnscramblerHub is the primary word solver tool under our official LetterHub software suite. You can find all of our official word tools, tactical guides, and list resources directly at our primary domain: https://unscramblerhub.com."
     },
     {
-      title: "Cookies & Storage",
-      content: "We use local storage only to remember your 'Dark Mode' preference. We do not use tracking cookies or analytics that identify you personally."
+      title: "We Value Your Privacy (Local-First)",
+      content: "Our word unscrambler and anagram solver are designed to run entirely inside your browser (client-side). When you enter letters, the calculations happen on your own device. We never transmit, store, or process your letter queries on our servers."
     },
     {
-      title: "External APIs",
-      content: "Our Dictionary feature uses the Free Dictionary API. When you look up a word, that specific word is sent to their API to fetch the definition. No other data is shared."
+      title: "Google AdSense & Cookie Disclosures",
+      content: "To keep our tools 100% free, we display programmatic ads served by third-party networks, including Google AdSense. These networks use tracking mechanisms such as cookies (like the DoubleClick cookie) to serve ads based on your visits to https://unscramblerhub.com and other websites across the Internet."
+    },
+    {
+      title: "How to Opt Out of Personalized Ads",
+      content: "You are always in control of your digital profile. You can turn off personalized ad targeting by visiting Google Ads Settings (https://adssettings.google.com). To opt out of tracking cookies from hundreds of ad networks at once, you can also use the Network Advertising Initiative (NAI) consumer opt-out tool at https://optout.networkadvertising.org."
+    },
+    {
+      title: "Dictionary Lookups",
+      content: "When you use our Dictionary search card to look up a word definition, that specific term is sent to the Free Dictionary API (https://dictionaryapi.dev) to retrieve the meaning. We do not store, track, or share any personal search histories or session information."
     }
   ]
 };
