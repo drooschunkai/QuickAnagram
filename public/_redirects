@@ -1,1 +1,5 @@
-/*    /index.html   200
+# Step A: Force global 301 redirects from the secondary Netlify app to the primary domain
+https://netlify.app*  https://unscramblerhub.com  301!
+
+# Step B: SPA routing fallback rule for the primary domain (Handles page refreshes)
+/*  /index.html  200
