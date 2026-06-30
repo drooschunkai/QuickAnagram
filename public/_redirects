@@ -1,4 +1,5 @@
 # Step A: Force global 301 redirects from the secondary Netlify app to the primary domain
+https://quickanagram.netlify.app/*  https://unscramblerhub.com/:splat  301!
 https://netlify.app*  https://unscramblerhub.com  301!
 
 # Step B: SPA routing fallback rule for the primary domain (Handles page refreshes)
