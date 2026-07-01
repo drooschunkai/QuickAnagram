@@ -7,6 +7,8 @@ import { BlogLayout } from './components/BlogLayout.tsx';
 import { HomeView } from './components/HomeView.tsx';
 import { UnscramblerView } from './components/UnscramblerView.tsx';
 import { AnagramSolverView } from './components/AnagramSolverView.tsx';
+import { CognitiveGame } from './components/CognitiveGame.tsx';
+import { AnagramGame } from './components/AnagramGame.tsx';
 
 type View = 'home' | 'unscrambler' | 'anagram-solver' | 'blog' | 'about' | 'contact' | 'dictionary' | 'policy' | 'terms' | 'words-az' | 'strategy';
 
@@ -130,6 +132,7 @@ export const normalizeWord = (word: string, lang: string): string => {
 
 export default function App() {
   const [view, setView] = useState<View>('home');
+  const [activeStrategyArticle, setActiveStrategyArticle] = useState<'unscrambling' | 'anagramming'>('unscrambling');
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [unscrambleInput, setUnscrambleInput] = useState('');
   const [unscrambleResults, setUnscrambleResults] = useState<Record<number, string[]>>({});
@@ -1480,192 +1483,454 @@ export default function App() {
           <div className="max-w-4xl mx-auto w-full py-16 px-4">
             <link rel="canonical" href="https://unscramblerhub.com/strategy" />
             
-            <h1 className={`text-4xl md:text-5xl font-black mb-6 tracking-tight text-center ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-              The Psychology and Strategy of Word Unscrambling
-            </h1>
-            <p className={`text-lg md:text-xl text-center font-bold mb-12 leading-relaxed ${isDarkMode ? 'text-teal-400' : 'text-teal-700'}`}>
-              How to Train Your Brain to See Hidden Words
-            </p>
-
-            {/* Interactive Strategy Feature: Cognitive Training Playground */}
-            <div className={`p-8 rounded-3xl mb-12 border ${
-              isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'
-            }`}>
-              <h3 className={`text-lg font-black uppercase tracking-widest text-center mb-6 text-xs ${isDarkMode ? 'text-teal-400' : 'text-teal-700'}`}>
-                Cognitive Training: Interactive Unscrambler Game
-              </h3>
-              <p className="text-sm text-center mb-8 max-w-lg mx-auto leading-relaxed">
-                Staring at static letter rows creates a cognitive bottleneck. Physically moving your letter tiles is the fastest way to trigger pattern recognition. Try unscrambling the word below by clicking on the tiles!
-              </p>
-              
-              {/* Interactive Unscramble Trainer */}
-              <div className="flex flex-col items-center justify-center gap-6">
-                <div className="flex gap-2">
-                  {['A', 'N', 'A', 'G', 'R', 'A', 'M'].map((letter, idx) => (
-                    <span
-                      key={idx}
-                      className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl border flex items-center justify-center font-black text-lg md:text-xl cursor-pointer hover:-translate-y-1 transition-transform select-none ${
-                        isDarkMode ? 'bg-slate-950 border-slate-800 text-white hover:border-teal-400 shadow-md shadow-black/45' : 'bg-white border-slate-250 text-slate-800 hover:border-teal-600 shadow-sm'
-                      }`}
-                    >
-                      {letter}
-                    </span>
-                  ))}
-                </div>
-                <div className="text-center mt-2">
-                  <span className={`inline-block px-4 py-2 rounded-xl text-xs font-bold uppercase ${
-                    isDarkMode ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-100 text-teal-800'
-                  }`}>
-                    Hint: A word or phrase formed by rearranging the letters of another
-                  </span>
-                </div>
+            {/* Elegant Article Tab Selector */}
+            <div className="flex justify-center mb-10">
+              <div className={`flex p-1.5 rounded-2xl border ${
+                isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-100 border-slate-200'
+              } shadow-inner`}>
+                <button
+                  onClick={() => setActiveStrategyArticle('unscrambling')}
+                  className={`px-6 py-3 rounded-xl text-xs md:text-sm font-black transition-all cursor-pointer ${
+                    activeStrategyArticle === 'unscrambling'
+                      ? (isDarkMode ? 'bg-teal-500 text-white shadow-md shadow-teal-500/20' : 'bg-teal-600 text-white shadow-md shadow-teal-600/10')
+                      : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900')
+                  }`}
+                >
+                  Word Unscrambling
+                </button>
+                <button
+                  onClick={() => setActiveStrategyArticle('anagramming')}
+                  className={`px-6 py-3 rounded-xl text-xs md:text-sm font-black transition-all cursor-pointer ${
+                    activeStrategyArticle === 'anagramming'
+                      ? (isDarkMode ? 'bg-teal-500 text-white shadow-md shadow-teal-500/20' : 'bg-teal-600 text-white shadow-md shadow-teal-600/10')
+                      : (isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900')
+                  }`}
+                >
+                  Word Anagramming
+                </button>
               </div>
             </div>
 
-            <div className={`prose max-w-none ${isDarkMode ? 'text-slate-300' : 'text-slate-700'} space-y-8 text-base md:text-lg leading-relaxed`}>
-              
-              <section className="space-y-4">
-                <p>
-                  For decades, word games have held a legendary status in the realm of casual gaming and competitive puzzles. From the classic living room battles of Scrabble® to the global, daily ritual of Wordle®, millions of people spend their mornings and evenings staring at a jumble of letters, trying to force order out of chaos.
+            {activeStrategyArticle === 'unscrambling' ? (
+              <>
+                <h1 className={`text-4xl md:text-5xl font-black mb-6 tracking-tight text-center ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                  The Psychology and Strategy of Word Unscrambling
+                </h1>
+                <p className={`text-lg md:text-xl text-center font-bold mb-12 leading-relaxed ${isDarkMode ? 'text-teal-400' : 'text-teal-700'}`}>
+                  How to Train Your Brain to See Hidden Words
                 </p>
-                <p>
-                  But what actually happens inside the human brain when we try to unscramble words? Why do some people spot a seven-letter panagram instantly, while others struggle to find a basic three-letter word in the exact same pile?
+              </>
+            ) : (
+              <>
+                <h1 className={`text-4xl md:text-5xl font-black mb-6 tracking-tight text-center ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                  The Psychology and Strategy of Word Anagramming
+                </h1>
+                <p className={`text-lg md:text-xl text-center font-bold mb-12 leading-relaxed ${isDarkMode ? 'text-teal-400' : 'text-teal-700'}`}>
+                  How to Train Your Brain
                 </p>
-                <p>
-                  Unscrambling words isn't just an innate talent; it is a cognitive skill rooted in visual psychology, pattern recognition, and structural linguistics. By understanding how your brain processes mixed-up letter strings, you can actively train your mind to see hidden words faster, elevate your competitive game play, and turn any word solver tool into a powerful personal coach.
-                </p>
-              </section>
+              </>
+            )}
 
-              <section className="space-y-4 pt-4">
-                <h2 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                  The Cognitive Science Behind Anagrams
-                </h2>
-                <p>
-                  To master word games, it helps to first understand the mental hurdles your brain must overcome. When you read a normal sentence, your brain doesn't actually process every letter individually. Instead, it recognizes words as complete shapes—a cognitive phenomenon known as <strong>word shape recognition</strong> or <strong>orthographic processing</strong>.
+            {/* Interactive Strategy Feature: Cognitive Training Playground */}
+            {activeStrategyArticle === 'unscrambling' ? (
+              <div className="mb-12">
+                <h3 className={`text-sm font-black uppercase tracking-widest text-center mb-4 ${isDarkMode ? 'text-teal-400' : 'text-teal-700'}`}>
+                  Cognitive Training: Interactive Unscrambler Game
+                </h3>
+                <p className="text-xs text-center mb-6 max-w-md mx-auto leading-relaxed text-slate-400">
+                  Staring at static letter rows creates a cognitive bottleneck. Physically moving your letter tiles is the fastest way to trigger pattern recognition. Click tiles or type on your keyboard to solve!
                 </p>
-                <p>
-                  When letters are scrambled into an anagram, this shortcut backfires. Your brain tries to read the jumble as a cohesive unit, gets confused by the lack of a familiar shape, and experiences a form of cognitive friction.
+                
+                <CognitiveGame isDarkMode={isDarkMode} />
+              </div>
+            ) : (
+              <div className="mb-12">
+                <h3 className={`text-sm font-black uppercase tracking-widest text-center mb-4 ${isDarkMode ? 'text-teal-400' : 'text-teal-700'}`}>
+                  Cognitive Training: Interactive Anagram Matcher
+                </h3>
+                <p className="text-xs text-center mb-6 max-w-md mx-auto leading-relaxed text-slate-400">
+                  Orthographic fixation forces our brains to see only the original word. By actively rearranging letters into alternative structures, you train your brain to break the Einstellung effect. Click tiles or type on your keyboard to solve!
                 </p>
-                <p>
-                  Psychologists have noted that our brains love order. When faced with a word scramble, your working memory attempts to mentally rotate, shift, and substitute letters into configurations that match your internal lexicon (your mental dictionary). If your letter pool contains a rare letter like Q, X, or Z, the brain often fixates heavily on that outlier, creating a mental bottleneck that blocks you from noticing simpler vowel-consonant arrangements hiding right next to it.
-                </p>
-              </section>
+                
+                <AnagramGame isDarkMode={isDarkMode} />
+              </div>
+            )}
 
-              <section className="space-y-6 pt-4">
-                <h2 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                  Advanced Tactics for Competitive Word Play
-                </h2>
-                <p>
-                  Whether you are matching wits in Words with Friends® or competing in a local Scrabble® tournament, relying on raw intuition will only get you so far. Top-tier players utilize systematic visual strategies to dismantle word puzzles piece by piece.
-                </p>
-
-                <div className="space-y-4 pl-4 border-l-2 border-teal-500/35">
-                  <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
-                    1. The Spatial Re-arrangement Technique
-                  </h3>
+            {activeStrategyArticle === 'unscrambling' ? (
+              <div className={`prose max-w-none ${isDarkMode ? 'text-slate-300' : 'text-slate-700'} space-y-8 text-base md:text-lg leading-relaxed`}>
+                
+                <section className="space-y-4">
                   <p>
-                    Staring at a stagnant row of tiles forces your brain to repeatedly view the same incorrect patterns. One of the simplest yet most effective adjustments you can make is to physically move your tiles.
+                    For decades, word games have held a legendary status in the realm of casual gaming and competitive puzzles. From the classic living room battles of Scrabble® to the global, daily ritual of Wordle®, millions of people spend their mornings and evenings staring at a jumble of letters, trying to force order out of chaos.
                   </p>
-                  <ul className="list-disc pl-6 space-y-2 text-sm md:text-base">
-                    <li>
-                      <strong>The Circular Method:</strong> If playing a digital game, or if you can move your physical tiles, arrange the letters in a circle rather than a linear line. A circle eliminates the concept of a "beginning" and an "ending," allowing your peripheral vision to naturally bridge vowels and consonants from entirely new angles.
-                    </li>
-                    <li>
-                      <strong>The Vowel/Consonant Split:</strong> Separate your vowels (A, E, I, O, U) from your consonants. Push the vowels to the top row and the consonants to the bottom. This layout mirrors the basic architectural blueprint of the English language, making it instantly easier to see how many syllables you can construct.
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="space-y-4 pl-4 border-l-2 border-teal-500/35">
-                  <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
-                    2. High-Value Tile Anchoring
-                  </h3>
                   <p>
-                    In games like Scrabble®, standard letters like E, A, R, and T are easy to place but yield low point values. Conversely, letters like J, K, Q, X, and Z are high-scoring goldmines. To maximize your score, practice anchoring.
+                    But what actually happens inside the human brain when we try to unscramble words? Why do some people spot a seven-letter panagram instantly, while others struggle to find a basic three-letter word in the exact same pile?
                   </p>
-                  <ul className="list-disc pl-6 space-y-2 text-sm md:text-base">
-                    <li>
-                      Pick your highest-value letter or your rarest consonant.
-                    </li>
-                    <li>
-                      Mentally or physically test that letter in the three primary word positions: at the very beginning of a word, in the exact middle, or at the very end.
-                    </li>
-                    <li>
-                      Build outward from that specific anchor point rather than trying to puzzle out all seven or eight letters simultaneously.
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="space-y-4 pl-4 border-l-2 border-teal-500/35">
-                  <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
-                    3. Syllable and Morphological Tracking
-                  </h3>
                   <p>
-                    Instead of trying to find a massive, complex word out of nowhere, look for small, foundational structural units called morphemes.
+                    Unscrambling words isn't just an innate talent; it is a cognitive skill rooted in visual psychology, pattern recognition, and structural linguistics. By understanding how your brain processes mixed-up letter strings, you can actively train your mind to see hidden words faster, elevate your competitive game play, and turn any word solver tool into a powerful personal coach.
                   </p>
-                  <ul className="list-disc pl-6 space-y-2 text-sm md:text-base">
-                    <li>
-                      Scan your letters for common combinations that frequently appear together in English speech, such as CH, SH, TH, WH, PH, CK, and QU.
-                    </li>
-                    <li>
-                      When you identify a pair like TH, stack those two tiles directly on top of each other or move them close together. By treating a letter pair as a single functional unit, you drastically reduce the cognitive load on your working memory, transforming an overwhelming seven-letter problem into a much simpler five-step puzzle.
-                    </li>
-                  </ul>
-                </div>
-              </section>
+                </section>
 
-              <section className="space-y-4 pt-4">
-                <h2 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                  How to Use a Word Unscrambler Responsibly as a Study Guide
-                </h2>
-                <p>
-                  There is a common misconception that utilizing a digital word solver is simply "cheating." While using an unscrambler mid-game to defeat an opponent without their knowledge defeats the competitive spirit, these tools are actually invaluable linguistic aids when integrated into your regular practice routine.
-                </p>
+                <section className="space-y-4 pt-4">
+                  <h2 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    The Cognitive Science Behind Anagrams
+                  </h2>
+                  <p>
+                    To master word games, it helps to first understand the mental hurdles your brain must overcome. When you read a normal sentence, your brain doesn't actually process every letter individually. Instead, it recognizes words as complete shapes—a cognitive phenomenon known as <strong>word shape recognition</strong> or <strong>orthographic processing</strong>.
+                  </p>
+                  <p>
+                    When letters are scrambled into an anagram, this shortcut backfires. Your brain tries to read the jumble as a cohesive unit, gets confused by the lack of a familiar shape, and experiences a form of cognitive friction.
+                  </p>
+                  <p>
+                    Psychologists have noted that our brains love order. When faced with a word scramble, your working memory attempts to mentally rotate, shift, and substitute letters into configurations that match your internal lexicon (your mental dictionary). If your letter pool contains a rare letter like Q, X, or Z, the brain often fixates heavily on that outlier, creating a mental bottleneck that blocks you from noticing simpler vowel-consonant arrangements hiding right next to it.
+                  </p>
+                </section>
 
-                {/* Study Flow Diagram */}
-                <div className={`p-6 rounded-2xl border text-center my-8 ${
-                  isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-100/50 border-slate-250'
-                }`}>
-                  <h4 className={`text-xs uppercase font-black tracking-widest mb-4 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                    The Ideal Post-Game Study Flow
-                  </h4>
-                  <div className="flex flex-col md:flex-row items-center justify-center gap-3 text-xs font-bold font-mono">
-                    <span className={`px-4 py-2 rounded-lg ${isDarkMode ? 'bg-slate-900 border border-slate-800 text-teal-400' : 'bg-white border border-slate-200 text-teal-700 shadow-sm'}`}>1. Play Match</span>
-                    <span className="text-slate-400">→</span>
-                    <span className={`px-4 py-2 rounded-lg ${isDarkMode ? 'bg-slate-900 border border-slate-800 text-teal-400' : 'bg-white border border-slate-200 text-teal-700 shadow-sm'}`}>2. Save Board State</span>
-                    <span className="text-slate-400">→</span>
-                    <span className={`px-4 py-2 rounded-lg ${isDarkMode ? 'bg-slate-900 border border-slate-800 text-teal-400' : 'bg-white border border-slate-200 text-teal-700 shadow-sm'}`}>3. Run Solver</span>
-                    <span className="text-slate-400">→</span>
-                    <span className={`px-4 py-2 rounded-lg ${isDarkMode ? 'bg-slate-900 border border-slate-800 text-teal-400' : 'bg-white border border-slate-200 text-teal-700 shadow-sm'}`}>4. Analyze Missed Words</span>
+                <section className="space-y-6 pt-4">
+                  <h2 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    Advanced Tactics for Competitive Word Play
+                  </h2>
+                  <p>
+                    Whether you are matching wits in Words with Friends® or competing in a local Scrabble® tournament, relying on raw intuition will only get you so far. Top-tier players utilize systematic visual strategies to dismantle word puzzles piece by piece.
+                  </p>
+
+                  <div className="space-y-4 pl-4 border-l-2 border-teal-500/35">
+                    <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                      1. The Spatial Re-arrangement Technique
+                    </h3>
+                    <p>
+                      Staring at a stagnant row of tiles forces your brain to repeatedly view the same incorrect patterns. One of the simplest yet most effective adjustments you can make is to physically move your tiles.
+                    </p>
+                    <ul className="list-disc pl-6 space-y-2 text-sm md:text-base">
+                      <li>
+                        <strong>The Circular Method:</strong> If playing a digital game, or if you can move your physical tiles, arrange the letters in a circle rather than a linear line. A circle eliminates the concept of a "beginning" and an "ending," allowing your peripheral vision to naturally bridge vowels and consonants from entirely new angles.
+                      </li>
+                      <li>
+                        <strong>The Vowel/Consonant Split:</strong> Separate your vowels (A, E, I, O, U) from your consonants. Push the vowels to the top row and the consonants to the bottom. This layout mirrors the basic architectural blueprint of the English language, making it instantly easier to see how many syllables you can construct.
+                      </li>
+                    </ul>
                   </div>
-                </div>
 
-                <p>
-                  Grandmasters in chess use software to analyze their completed games and find missed tactical opportunities. You can use UnscramblerHub in the exact same manner:
-                </p>
-                <ul className="list-disc pl-6 space-y-3 text-sm md:text-base">
-                  <li>
-                    <strong>Post-Game Diagnostics:</strong> After completing a tough match or a daily word puzzle, input the exact rack of letters you struggled with into the solver. Look at the highest-scoring words you completely missed. Ask yourself: Why didn't I see that combination? Was I trapped by a prefix? Did I misjudge my vowel distribution?
-                  </li>
-                  <li>
-                    <strong>Active Vocabulary Expansion:</strong> When the solver generates a high-scoring or unusual word that you’ve never seen before, don't just gloss over it. Look up its definition, understand its part of speech, and commit it to memory. The next time those specific tiles land on your rack, you won't need a tool—your trained brain will recognize the shape instantly.
-                  </li>
-                  <li>
-                    <strong>Pattern Familiarization:</strong> Using a solver exposes you to the structural boundaries of language. You will start to notice how frequently certain suffixes like -OUS or -ISM create massive scoring spikes, intuitively changing how you conserve and manage your letter tiles in future games.
-                  </li>
-                </ul>
-              </section>
+                  <div className="space-y-4 pl-4 border-l-2 border-teal-500/35">
+                    <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                      2. High-Value Tile Anchoring
+                    </h3>
+                    <p>
+                      In games like Scrabble®, standard letters like E, A, R, and T are easy to place but yield low point values. Conversely, letters like J, K, Q, X, and Z are high-scoring goldmines. To maximize your score, practice anchoring.
+                    </p>
+                    <ul className="list-disc pl-6 space-y-2 text-sm md:text-base">
+                      <li>
+                        Pick your highest-value letter or your rarest consonant.
+                      </li>
+                      <li>
+                        Mentally or physically test that letter in the three primary word positions: at the very beginning of a word, in the exact middle, or at the very end.
+                      </li>
+                      <li>
+                        Build outward from that specific anchor point rather than trying to puzzle out all seven or eight letters simultaneously.
+                      </li>
+                    </ul>
+                  </div>
 
-              <section className="space-y-4 pt-4">
-                <h2 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                  Conclusion: Exercise Your Mind
-                </h2>
-                <p>
-                  At its core, word unscrambling is a beautiful synthesis of logic, visual processing, and language art. Your brain is highly adaptive; the more you challenge it to break down complex, chaotic letter clusters, the faster and sharper your linguistic instincts will become. Use structural strategies, change your physical perspective when you hit a wall, and utilize your word unscrambler as an interactive coach to permanently level up your word-gaming skills.
-                </p>
-              </section>
+                  <div className="space-y-4 pl-4 border-l-2 border-teal-500/35">
+                    <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                      3. Syllable and Morphological Tracking
+                    </h3>
+                    <p>
+                      Instead of trying to find a massive, complex word out of nowhere, look for small, foundational structural units called morphemes.
+                    </p>
+                    <ul className="list-disc pl-6 space-y-2 text-sm md:text-base">
+                      <li>
+                        Scan your letters for common combinations that frequently appear together in English speech, such as CH, SH, TH, WH, PH, CK, and QU.
+                      </li>
+                      <li>
+                        When you identify a pair like TH, stack those two tiles directly on top of each other or move them close together. By treating a letter pair as a single functional unit, you drastically reduce the cognitive load on your working memory, transforming an overwhelming seven-letter problem into a much simpler five-step puzzle.
+                      </li>
+                    </ul>
+                  </div>
+                </section>
 
-            </div>
+                <section className="space-y-4 pt-4">
+                  <h2 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    How to Use a Word Unscrambler Responsibly as a Study Guide
+                  </h2>
+                  <p>
+                    There is a common misconception that utilizing a digital word solver is simply "cheating." While using an unscrambler mid-game to defeat an opponent without their knowledge defeats the competitive spirit, these tools are actually invaluable linguistic aids when integrated into your regular practice routine.
+                  </p>
+
+                  {/* Study Flow Diagram */}
+                  <div className={`p-6 rounded-2xl border text-center my-8 ${
+                    isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-100/50 border-slate-250'
+                  }`}>
+                    <h4 className={`text-xs uppercase font-black tracking-widest mb-4 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                      The Ideal Post-Game Study Flow
+                    </h4>
+                    <div className="flex flex-col md:flex-row items-center justify-center gap-3 text-xs font-bold font-mono">
+                      <span className={`px-4 py-2 rounded-lg ${isDarkMode ? 'bg-slate-900 border border-slate-800 text-teal-400' : 'bg-white border border-slate-200 text-teal-700 shadow-sm'}`}>1. Play Match</span>
+                      <span className="text-slate-400">→</span>
+                      <span className={`px-4 py-2 rounded-lg ${isDarkMode ? 'bg-slate-900 border border-slate-800 text-teal-400' : 'bg-white border border-slate-200 text-teal-700 shadow-sm'}`}>2. Save Board State</span>
+                      <span className="text-slate-400">→</span>
+                      <span className={`px-4 py-2 rounded-lg ${isDarkMode ? 'bg-slate-900 border border-slate-800 text-teal-400' : 'bg-white border border-slate-200 text-teal-700 shadow-sm'}`}>3. Run Solver</span>
+                      <span className="text-slate-400">→</span>
+                      <span className={`px-4 py-2 rounded-lg ${isDarkMode ? 'bg-slate-900 border border-slate-800 text-teal-400' : 'bg-white border border-slate-200 text-teal-700 shadow-sm'}`}>4. Analyze Missed Words</span>
+                    </div>
+                  </div>
+
+                  <p>
+                    Grandmasters in chess use software to analyze their completed games and find missed tactical opportunities. You can use UnscramblerHub in the exact same manner:
+                  </p>
+                  <ul className="list-disc pl-6 space-y-3 text-sm md:text-base">
+                    <li>
+                      <strong>Post-Game Diagnostics:</strong> After completing a tough match or a daily word puzzle, input the exact rack of letters you struggled with into the solver. Look at the highest-scoring words you completely missed. Ask yourself: Why didn't I see that combination? Was I trapped by a prefix? Did I misjudge my vowel distribution?
+                    </li>
+                    <li>
+                      <strong>Active Vocabulary Expansion:</strong> When the solver generates a high-scoring or unusual word that you’ve never seen before, don't just gloss over it. Look up its definition, understand its part of speech, and commit it to memory. The next time those specific tiles land on your rack, you won't need a tool—your trained brain will recognize the shape instantly.
+                    </li>
+                    <li>
+                      <strong>Pattern Familiarization:</strong> Using a solver exposes you to the structural boundaries of language. You will start to notice how frequently certain suffixes like -OUS or -ISM create massive scoring spikes, intuitively changing how you conserve and manage your letter tiles in future games.
+                    </li>
+                  </ul>
+                </section>
+
+                <section className="space-y-4 pt-4">
+                  <h2 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    Conclusion: Exercise Your Mind
+                  </h2>
+                  <p>
+                    At its core, word unscrambling is a beautiful synthesis of logic, visual processing, and language art. Your brain is highly adaptive; the more you challenge it to break down complex, chaotic letter clusters, the faster and sharper your linguistic instincts will become. Use structural strategies, change your physical perspective when you hit a wall, and utilize your word unscrambler as an interactive coach to permanently level up your word-gaming skills.
+                  </p>
+                </section>
+
+              </div>
+            ) : (
+              <div className={`prose max-w-none ${isDarkMode ? 'text-slate-300' : 'text-slate-700'} space-y-8 text-base md:text-lg leading-relaxed`}>
+                
+                <section className="space-y-4">
+                  <p>
+                    Anagramming—the act of rearranging the letters of a word or phrase to produce a new word or phrase—is often viewed as a casual pastime found on the back pages of newspapers or tucked inside mobile puzzle apps. However, beneath this deceptive simplicity lies a complex cognitive matrix.
+                  </p>
+                  <p>
+                    Mastering anagrams is not merely a byproduct of a massive vocabulary. It is an intricate interplay of visual-spatial processing, cognitive flexibility, executive functioning, and working memory. To consistently crack complex jumbles, one must move past brute-force guessing and implement a systematic, scientifically backed strategy.
+                  </p>
+                </section>
+
+                <section className="space-y-4 pt-4">
+                  <h2 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    1. The Cognitive Architecture of Anagramming
+                  </h2>
+                  <p>
+                    To understand how to train your brain for anagramming, we must first look at what happens inside the cerebral cortex when you confront a jumbled string of text like <strong>TEHAPL</strong>.
+                  </p>
+
+                  <div className="space-y-3 pl-4 border-l-2 border-teal-500/35">
+                    <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                      The Orthographic Processing Trap
+                    </h3>
+                    <p>
+                      When humans read, they do not look at every single letter individually. Instead, the brain utilizes a mechanism known as <strong>orthographic processing</strong> to recognize words as complete units based on their shape and familiar letter groupings. The brain’s visual word form area (VWFA) acts as a highly specialized scanner that matches visual inputs with an internal dictionary.
+                    </p>
+                    <p>
+                      In anagramming, this evolutionary shortcut becomes a cognitive liability. Your brain looks at a jumbled string and desperately tries to force a pattern where none exists, often locking onto a nonsense word or an incorrect root. Psychologists call this cognitive fixation or the <strong>Einstellung effect</strong>—the tendency to approach a problem with a rigid, preconceived mindset.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3 pl-4 border-l-2 border-teal-500/35">
+                    <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                      Working Memory Capacity
+                    </h3>
+                    <p>
+                      Solving an anagram requires you to hold a set of letters in your mind while simultaneously manipulating their spatial order. This process relies heavily on the phonological loop and the visuospatial sketchpad, two core sub-components of your working memory.
+                    </p>
+                    <ul className="list-disc pl-6 space-y-1.5 text-sm md:text-base">
+                      <li>
+                        <strong>The Phonological Loop:</strong> Handles verbal and auditory information (subvocally repeating letter combinations).
+                      </li>
+                      <li>
+                        <strong>The Visuospatial Sketchpad:</strong> Handles visual imagery (mentally moving a "P" to the front of the string).
+                      </li>
+                    </ul>
+                    <p>
+                      Because the average adult working memory can only hold about four to seven chunks of information at a time, long or complex anagrams quickly overload our mental RAM. Strategy, therefore, is about reducing this cognitive load.
+                    </p>
+                  </div>
+                </section>
+
+                <section className="space-y-4 pt-4">
+                  <h2 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    2. Advanced Structural Strategies for Deconstruction
+                  </h2>
+                  <p>
+                    Elite anagram solvers do not randomly guess. They use structural linguistics to systematically break down the jumble. If you want to train your brain to operate like an algorithmic solver, you must adopt these architectural frameworks.
+                  </p>
+
+                  <div className="space-y-3 pl-4 border-l-2 border-teal-500/35">
+                    <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                      The Nucleus Approach: Vowel-Consonant Clustering
+                    </h3>
+                    <p>
+                      Every English word relies on predictable structures. Instead of staring at the letters as a flat line, mentally divide them into nuclei (vowels) and frames (consonants).
+                    </p>
+                    <ul className="list-disc pl-6 space-y-2 text-sm md:text-base">
+                      <li>
+                        <strong>Isolate the Vowels:</strong> Count the vowels and look at their ratios. A high volume of vowels indicates potential diphthongs (like EA, OU, AI) or specific suffixes.
+                      </li>
+                      <li>
+                        <strong>Anchor the High-Value Consonants:</strong> Look for low-frequency consonants like Z, Q, X, J, K, V, or W. Because these letters have highly restrictive pairing rules in English, they serve as natural structural anchors. For example, a Q almost always demands a U; a J rarely ends a word.
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="space-y-3 pl-4 border-l-2 border-teal-500/35">
+                    <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                      Morphological Segmenting
+                    </h3>
+                    <p>
+                      One of the fastest ways to clear mental space is to look for common morphological units—prefixes and suffixes. By locking a few letters into a fixed position, you drastically decrease the number of remaining permutations.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-xl my-2 border font-mono text-xs text-center bg-slate-100/40 dark:bg-slate-950/40 dark:border-slate-800">
+                      <div>
+                        <div className="font-bold text-teal-500 mb-1">Total Letters</div>
+                        <div>7 (Permutations = 5,040)</div>
+                      </div>
+                      <div>
+                        <div className="font-bold text-teal-500 mb-1">Identify Suffix</div>
+                        <div>"-ING" (Leaves 4 letters)</div>
+                      </div>
+                      <div>
+                        <div className="font-bold text-teal-500 mb-1">Remaining Permutations</div>
+                        <div>24</div>
+                      </div>
+                    </div>
+                    <p>
+                      By identifying a simple three-letter suffix, you reduce your brain’s processing requirements from over five thousand combinations down to just twenty-four.
+                    </p>
+
+                    <div className="overflow-x-auto w-full mt-4">
+                      <table className={`min-w-full text-xs md:text-sm border-collapse border rounded-xl overflow-hidden ${
+                        isDarkMode ? 'border-slate-800' : 'border-slate-200'
+                      }`}>
+                        <thead>
+                          <tr className={isDarkMode ? 'bg-slate-900' : 'bg-slate-50'}>
+                            <th className={`p-2.5 border text-left font-black ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>Common Prefixes</th>
+                            <th className={`p-2.5 border text-left font-black ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>Common Suffixes</th>
+                            <th className={`p-2.5 border text-left font-black ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>High-Probability Bigrams</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className={`p-2.5 border ${isDarkMode ? 'border-slate-800 text-slate-300' : 'border-slate-200 text-slate-700'}`}>RE-, UN-, DE-, IN-, DIS-, PRE-</td>
+                            <td className={`p-2.5 border ${isDarkMode ? 'border-slate-800 text-slate-300' : 'border-slate-200 text-slate-700'}`}>-ING, -ED, -TION, -ABLE, -MENT, -ESS</td>
+                            <td className={`p-2.5 border ${isDarkMode ? 'border-slate-800 text-slate-300' : 'border-slate-200 text-slate-700'}`}>CH, SH, TH, WH, PH, CK, ST, QU</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="space-y-4 pt-4">
+                  <h2 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    3. Spatial and Environmental Manipulation
+                  </h2>
+                  <p>
+                    Because our brains are inherently prone to cognitive fixation when looking at static text, changing the physical or visual environment of the puzzle is a highly effective tactical override.
+                  </p>
+
+                  <div className="space-y-3 pl-4 border-l-2 border-teal-500/35">
+                    <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                      Spatial Geometric Rearrangement
+                    </h3>
+                    <p>
+                      If you are staring an anagram presented in a straight horizontal line, your brain will naturally read it left-to-right, reinforcing the incorrect pattern.
+                    </p>
+                    <p className="font-medium text-teal-500">
+                      The Fix: Rewrite the letters in a circle or a chaotic vertical cluster.
+                    </p>
+                    <p>
+                      By stripping away the horizontal timeline of the letters, you disrupt the visual word form area's ability to lock onto an incorrect sequence. A circular layout forces the eye to jump randomly across consonants and vowels, sparking novel neural connections and allowing the correct word to "pop" out via insight or <em>Aha!</em> moments.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3 pl-4 border-l-2 border-teal-500/35">
+                    <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                      Tactile Manipulation
+                    </h3>
+                    <p>
+                      For high-level training, use physical tiles (like Scrabble pieces). Moving letters physically engages your motor cortex. This tactile feedback loop adds another layer of sensory input to your working memory, making it significantly easier to track spatial transformations than trying to do it purely behind your eyelids.
+                    </p>
+                  </div>
+                </section>
+
+                <section className="space-y-4 pt-4">
+                  <h2 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    4. Neurological Training: Building the Anagramming Brain
+                  </h2>
+                  <p>
+                    Neuroplasticity proves that the brain can rewire itself to become more efficient at specific tasks. To build an optimized anagramming intellect, you must practice targeted cognitive drills.
+                  </p>
+
+                  <div className="space-y-3 pl-4 border-l-2 border-teal-500/35">
+                    <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                      Drills for Neural Agility
+                    </h3>
+                    <ul className="list-disc pl-6 space-y-2 text-sm md:text-base">
+                      <li>
+                        <strong>The Suffix Strip:</strong> Take random seven-letter words and practice isolating their endings instantly. Train your eyes to instantly see O-U-G-H or T-I-O-N as single visual blocks rather than individual letters.
+                      </li>
+                      <li>
+                        <strong>The Inversion Drill:</strong> Practice reading short sentences backward or spelling common words in reverse. This weakens the rigid orthographic constraint that forces you to process text only in forward sequences.
+                      </li>
+                      <li>
+                        <strong>Bigram/Trigram Flashcards:</strong> Memorize the statistical frequency of letter pairings in your native language. In English, H is incredibly likely to follow T, S, C, or P. Train your brain to view these pairs as inseparable units.
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="space-y-3 pl-4 border-l-2 border-teal-500/35">
+                    <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                      The Role of Dopamine and Alpha Waves
+                    </h3>
+                    <p>
+                      Neuroscientific studies on puzzle-solving demonstrate that the sudden revelation of an anagram solution—the <em>Aha!</em> moment—is accompanied by a burst of alpha wave activity in the right hemisphere of the brain, followed closely by a surge of dopamine.
+                    </p>
+                    <p>
+                      To maximize alpha waves, you need a state of relaxed focus. Straining, stressing, or over-focusing actually activates the left hemisphere's logical, analytical circuits, which are poorly suited for the diffuse, creative pattern-matching required for anagrams. If you get stuck, look away for thirty seconds. Let your diffuse thinking process take over in the background.
+                    </p>
+                  </div>
+                </section>
+
+                <section className="space-y-4 pt-4">
+                  <h2 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    5. Summary Strategy Checklist
+                  </h2>
+                  <p>
+                    When faced with a stubborn jumble, execute this strategic checklist sequence:
+                  </p>
+                  <ul className="space-y-2.5">
+                    <li className="flex items-start gap-2.5 text-sm md:text-base">
+                      <input type="checkbox" className="mt-1 accent-teal-500 rounded" readOnly checked />
+                      <span><strong>Disrupt Visual Order:</strong> Immediately rewrite the letters in a circle or vertical stack.</span>
+                    </li>
+                    <li className="flex items-start gap-2.5 text-sm md:text-base">
+                      <input type="checkbox" className="mt-1 accent-teal-500 rounded" readOnly checked />
+                      <span><strong>Inventory the Assets:</strong> Count your vowels and isolate rare consonants (Z, X, Q).</span>
+                    </li>
+                    <li className="flex items-start gap-2.5 text-sm md:text-base">
+                      <input type="checkbox" className="mt-1 accent-teal-500 rounded" readOnly checked />
+                      <span><strong>Hunt for Suffixes/Prefixes:</strong> Scan for chunks like -ED, -ING, -EST, or RE-.</span>
+                    </li>
+                    <li className="flex items-start gap-2.5 text-sm md:text-base">
+                      <input type="checkbox" className="mt-1 accent-teal-500 rounded" readOnly checked />
+                      <span><strong>Anchor and Pivot:</strong> Place a high-probability consonant cluster at the start or end, then pivot the remaining letters around it.</span>
+                    </li>
+                    <li className="flex items-start gap-2.5 text-sm md:text-base">
+                      <input type="checkbox" className="mt-1 accent-teal-500 rounded" readOnly checked />
+                      <span><strong>Step Back:</strong> If fixation occurs, look away to allow right-hemisphere diffuse processing to break the deadlock.</span>
+                    </li>
+                  </ul>
+                </section>
+
+              </div>
+            )}
 
             <div className="flex justify-center mt-12">
               <button onClick={() => navigateTo('home')} className={`flex items-center gap-2 ${isDarkMode ? 'text-teal-400 border-teal-400 hover:bg-teal-400/10' : 'text-teal-700 border-teal-700 hover:bg-teal-50 border'} font-bold px-6 py-3 rounded-2xl transition-colors`}>
