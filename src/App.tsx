@@ -1,11 +1,14 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Search, Copy, Check, Menu, Info, Zap, Github, ExternalLink, ArrowLeft, Mail, MessageSquare, Book, Share2, X, Loader2, ChevronDown, Sun, Moon, Sliders, ChevronUp } from 'lucide-react';
+import { Search, Copy, Check, Menu, Info, Zap, Github, ExternalLink, ArrowLeft, Mail, MessageSquare, Book, Share2, X, Loader2, ChevronDown, Sun, Moon, Sliders, ChevronUp, RefreshCw, BookOpen, Bookmark, Award } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ABOUT_CONTENT, FAQ_ITEMS, POLICY_CONTENT, TERMS_CONTENT } from './content.ts';
 import { BLOG_POSTS, BlogPost } from './blogData.ts';
 import { BlogLayout } from './components/BlogLayout.tsx';
+import { HomeView } from './components/HomeView.tsx';
+import { UnscramblerView } from './components/UnscramblerView.tsx';
+import { AnagramSolverView } from './components/AnagramSolverView.tsx';
 
-type View = 'home' | 'blog' | 'about' | 'contact' | 'dictionary' | 'policy' | 'terms' | 'words-az';
+type View = 'home' | 'unscrambler' | 'anagram-solver' | 'blog' | 'about' | 'contact' | 'dictionary' | 'policy' | 'terms' | 'words-az' | 'strategy';
 
 interface Definition {
   word: string;
@@ -105,6 +108,10 @@ interface DictionaryWord {
 }
 
 export const normalizeWord = (word: string, lang: string): string => {
+  if (typeof word !== 'string') {
+    if (!word) return '';
+    word = String(word);
+  }
   if (!word) return '';
   const lower = word.toLowerCase();
   if (lang === 'ar') {
@@ -124,17 +131,25 @@ export const normalizeWord = (word: string, lang: string): string => {
 export default function App() {
   const [view, setView] = useState<View>('home');
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
-  const [input, setInput] = useState('');
-  const [mode, setMode] = useState<'unscramble' | 'anagram'>('unscramble');
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [unscrambleInput, setUnscrambleInput] = useState('');
+  const [unscrambleResults, setUnscrambleResults] = useState<Record<number, string[]>>({});
+  const [unscrambleIsProcessing, setUnscrambleIsProcessing] = useState(false);
+
+  const [anagramInput, setAnagramInput] = useState('');
+  const [anagramResults, setAnagramResults] = useState<Record<number, string[]>>({});
+  const [anagramIsProcessing, setAnagramIsProcessing] = useState(false);
+
   const [dictionary, setDictionary] = useState<DictionaryWord[]>([]);
-  const [results, setResults] = useState<Record<number, string[]>>({});
   const [copiedWord, setCopiedWord] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedDefinition, setSelectedDefinition] = useState<Definition | null>(null);
   const [isDefining, setIsDefining] = useState(false);
   const [dictInput, setDictInput] = useState('');
   const [sharedWord, setSharedWord] = useState<string | null>(null);
+
+  // Homepage inputs for preview searches
+  const [homeUnscrambleInput, setHomeUnscrambleInput] = useState('');
+  const [homeAnagramInput, setHomeAnagramInput] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('theme');
@@ -261,7 +276,7 @@ export default function App() {
     setAzSearch('');
   }, [currentLanguage]);
 
-  const navigateTo = (newView: View, slug?: string) => {
+  const navigateTo = (newView: View, slug?: string, initialInput?: string) => {
     setView(newView);
     if (slug) {
       const post = BLOG_POSTS.find(p => p.id === slug);
@@ -270,6 +285,36 @@ export default function App() {
       setSelectedPost(null);
     }
     window.scrollTo(0, 0);
+
+    // Auto-run search if entering a tool view with letters, or clear state if returning home
+    if (newView === 'unscrambler') {
+      const activeInput = initialInput || unscrambleInput;
+      if (activeInput && activeInput.length >= 2) {
+        if (initialInput) {
+          setUnscrambleInput(initialInput);
+        }
+        setTimeout(() => {
+          handleUnscrambleProcess(activeInput);
+        }, 50);
+      }
+    } else if (newView === 'anagram-solver') {
+      const activeInput = initialInput || anagramInput;
+      if (activeInput && activeInput.length >= 2) {
+        if (initialInput) {
+          setAnagramInput(initialInput);
+        }
+        setTimeout(() => {
+          handleAnagramProcess(activeInput);
+        }, 50);
+      }
+    } else if (newView === 'home') {
+      setUnscrambleInput('');
+      setUnscrambleResults({});
+      setAnagramInput('');
+      setAnagramResults({});
+      setHomeUnscrambleInput('');
+      setHomeAnagramInput('');
+    }
     
     // Update path instead of hash for standard crawlable and indexable SEO pathnames
     const newPath = newView === 'home'
@@ -298,7 +343,7 @@ export default function App() {
       }
     } else {
       const cleanPath = path.replace('/', '') as View;
-      const matchedView: View = ['home', 'blog', 'about', 'contact', 'dictionary', 'policy', 'terms', 'words-az'].includes(cleanPath)
+      const matchedView: View = ['home', 'unscrambler', 'anagram-solver', 'blog', 'about', 'contact', 'dictionary', 'policy', 'terms', 'words-az', 'strategy'].includes(cleanPath)
         ? cleanPath
         : (path === '/' ? 'home' : 'home'); // Default fallback to home
       setView(matchedView);
@@ -315,7 +360,7 @@ export default function App() {
       if (hash.startsWith('blog/')) {
         const slug = hash.split('/')[1];
         resolvedPath = `/blog/${slug}`;
-      } else if (['home', 'blog', 'about', 'contact', 'dictionary', 'policy', 'terms', 'words-az'].includes(hash)) {
+      } else if (['home', 'unscrambler', 'anagram-solver', 'blog', 'about', 'contact', 'dictionary', 'policy', 'terms', 'words-az', 'strategy'].includes(hash)) {
         resolvedPath = hash === 'home' ? '/' : `/${hash}`;
       }
       window.history.replaceState(null, '', resolvedPath);
@@ -416,24 +461,21 @@ export default function App() {
     return counts;
   };
 
-  const handleProcess = useCallback(() => {
-    if (!input || input.length < 2) return;
-    setIsProcessing(true);
+  const handleUnscrambleProcess = useCallback((overrideInput?: string) => {
+    const query = typeof overrideInput === 'string' ? overrideInput : unscrambleInput;
+    if (!query || query.length < 2) return;
+    setUnscrambleIsProcessing(true);
     setTimeout(() => {
-      const normalizedInput = normalizeWord(input, currentLanguage);
+      const normalizedInput = normalizeWord(query, currentLanguage);
       const targetCounts = getCharCounts(normalizedInput);
       const matched: Record<number, string[]> = {};
-      const startsWithVal = mode === 'unscramble' ? normalizeWord(filterStartsWith, currentLanguage).trim() : '';
-      const endsWithVal = mode === 'unscramble' ? normalizeWord(filterEndsWith, currentLanguage).trim() : '';
-      const containsVal = mode === 'unscramble' ? normalizeWord(filterContains, currentLanguage).trim() : '';
-      const lengthVal = mode === 'unscramble' && filterWordLength ? Number(filterWordLength.trim()) : NaN;
+      const startsWithVal = normalizeWord(filterStartsWith, currentLanguage).trim();
+      const endsWithVal = normalizeWord(filterEndsWith, currentLanguage).trim();
+      const containsVal = normalizeWord(filterContains, currentLanguage).trim();
+      const lengthVal = filterWordLength ? Number(filterWordLength.trim()) : NaN;
 
       for (const word of dictionary) {
-        if (mode === 'unscramble') {
-          if (word.normalized.length > normalizedInput.length) continue;
-        } else {
-          if (word.normalized.length !== normalizedInput.length) continue;
-        }
+        if (word.normalized.length > normalizedInput.length) continue;
 
         // Apply advanced advanced filters (Starts with, Ends with, Contains, Word length)
         if (startsWithVal && !word.normalized.startsWith(startsWithVal)) continue;
@@ -456,10 +498,58 @@ export default function App() {
         }
       }
       Object.keys(matched).forEach(len => matched[Number(len)].sort());
-      setResults(matched);
-      setIsProcessing(false);
-    }, 400);
-  }, [input, dictionary, mode, filterStartsWith, filterEndsWith, filterContains, filterWordLength, currentLanguage]);
+      setUnscrambleResults(matched);
+      setUnscrambleIsProcessing(false);
+
+      // Instantly scroll results into focus smoothly
+      setTimeout(() => {
+        const resultsEl = document.getElementById('unscrambler-results');
+        if (resultsEl) {
+          resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 50);
+    }, 0);
+  }, [unscrambleInput, dictionary, filterStartsWith, filterEndsWith, filterContains, filterWordLength, currentLanguage]);
+
+  const handleAnagramProcess = useCallback((overrideInput?: string) => {
+    const query = typeof overrideInput === 'string' ? overrideInput : anagramInput;
+    if (!query || query.length < 2) return;
+    setAnagramIsProcessing(true);
+    setTimeout(() => {
+      const normalizedInput = normalizeWord(query, currentLanguage);
+      const targetCounts = getCharCounts(normalizedInput);
+      const matched: Record<number, string[]> = {};
+
+      for (const word of dictionary) {
+        if (word.normalized.length !== normalizedInput.length) continue;
+
+        const wordCounts = getCharCounts(word.normalized);
+        let possible = true;
+        for (const char in wordCounts) {
+          if (!targetCounts[char] || wordCounts[char] > targetCounts[char]) {
+            possible = false;
+            break;
+          }
+        }
+        if (possible) {
+          const len = word.original.length;
+          if (!matched[len]) matched[len] = [];
+          matched[len].push(word.original);
+        }
+      }
+      Object.keys(matched).forEach(len => matched[Number(len)].sort());
+      setAnagramResults(matched);
+      setAnagramIsProcessing(false);
+
+      // Instantly scroll results into focus smoothly
+      setTimeout(() => {
+        const resultsEl = document.getElementById('unscrambler-results');
+        if (resultsEl) {
+          resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 50);
+    }, 0);
+  }, [anagramInput, dictionary, currentLanguage]);
 
   const copyToClipboard = (word: string) => {
     navigator.clipboard.writeText(word);
@@ -511,8 +601,11 @@ export default function App() {
     }
   };
 
-  const sortedLengths = useMemo(() => Object.keys(results).map(Number).sort((a, b) => b - a), [results]);
-  const totalFound = useMemo(() => Object.values(results).reduce((acc: number, curr: string[]) => acc + curr.length, 0), [results]);
+  const unscrambleSortedLengths = useMemo(() => Object.keys(unscrambleResults).map(Number).sort((a, b) => b - a), [unscrambleResults]);
+  const unscrambleTotalFound = useMemo(() => Object.values(unscrambleResults).reduce((acc: number, curr: string[]) => acc + curr.length, 0), [unscrambleResults]);
+
+  const anagramSortedLengths = useMemo(() => Object.keys(anagramResults).map(Number).sort((a, b) => b - a), [anagramResults]);
+  const anagramTotalFound = useMemo(() => Object.values(anagramResults).reduce((acc: number, curr: string[]) => acc + curr.length, 0), [anagramResults]);
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'dark bg-slate-950 text-slate-200' : 'bg-[#fdfdfb] text-slate-800'} font-sans flex flex-col transition-colors duration-300`}>
@@ -529,11 +622,12 @@ export default function App() {
           
           <div className="hidden md:flex items-center gap-8 text-sm font-medium">
             <div className={`flex gap-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-              <button onClick={() => { navigateTo('home'); setMode('unscramble'); }} className={`${view === 'home' && mode === 'unscramble' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'home' && mode === 'unscramble' ? '' : 'border-transparent'}`}>Unscrambler</button>
-              <button onClick={() => { navigateTo('home'); setMode('anagram'); }} className={`${view === 'home' && mode === 'anagram' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'home' && mode === 'anagram' ? '' : 'border-transparent'}`}>Anagram Solver</button>
+              <button onClick={() => navigateTo('unscrambler')} className={`${view === 'unscrambler' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'unscrambler' ? '' : 'border-transparent'}`}>Unscrambler</button>
+              <button onClick={() => navigateTo('anagram-solver')} className={`${view === 'anagram-solver' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'anagram-solver' ? '' : 'border-transparent'}`}>Anagram Solver</button>
               <button onClick={() => navigateTo('words-az')} className={`${view === 'words-az' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'words-az' ? '' : 'border-transparent'}`}>Words A-Z</button>
               <button onClick={() => navigateTo('dictionary')} className={`${view === 'dictionary' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'dictionary' ? '' : 'border-transparent'}`}>Dictionary</button>
               <button onClick={() => navigateTo('blog')} className={`${view === 'blog' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'blog' ? '' : 'border-transparent'}`}>Blog</button>
+              <button onClick={() => navigateTo('strategy')} className={`${view === 'strategy' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'strategy' ? '' : 'border-transparent'}`}>Strategy Guide</button>
               <button onClick={() => navigateTo('about')} className={`${view === 'about' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'about' ? '' : 'border-transparent'}`}>About</button>
             </div>
             
@@ -703,11 +797,12 @@ export default function App() {
               className="md:hidden overflow-hidden mt-4"
             >
               <div className={`flex flex-col gap-2 p-4 rounded-2xl ${isDarkMode ? 'bg-slate-900 border border-slate-850' : 'bg-slate-50 border border-slate-100'} text-sm font-semibold mt-2`}>
-                <button onClick={() => { navigateTo('home'); setMode('unscramble'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'home' && mode === 'unscramble' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Unscrambler</button>
-                <button onClick={() => { navigateTo('home'); setMode('anagram'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'home' && mode === 'anagram' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Anagram Solver</button>
+                <button onClick={() => { navigateTo('unscrambler'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'unscrambler' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Unscrambler</button>
+                <button onClick={() => { navigateTo('anagram-solver'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'anagram-solver' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Anagram Solver</button>
                 <button onClick={() => { navigateTo('words-az'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'words-az' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Words A-Z</button>
                 <button onClick={() => { navigateTo('dictionary'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'dictionary' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Dictionary</button>
                 <button onClick={() => { navigateTo('blog'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'blog' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Blog</button>
+                <button onClick={() => { navigateTo('strategy'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'strategy' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Strategy Guide</button>
                 <button onClick={() => { navigateTo('about'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'about' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>About</button>
               </div>
             </motion.div>
@@ -717,503 +812,70 @@ export default function App() {
 
       <main className="flex-1 flex flex-col px-6 md:px-12 py-8 max-w-7xl mx-auto w-full">
         {view === 'home' && (
-          <>
-            <div id="top-ad-slot" className={`w-full min-h-[90px] ${isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-600' : 'bg-slate-50 border-slate-200 text-slate-400'} border border-dashed rounded-xl mb-8 flex items-center justify-center text-xs font-mono`}>Advertisements</div>
-            <section className="max-w-2xl mx-auto w-full text-center mb-12">
-              <div className={`inline-flex p-1 ${isDarkMode ? 'bg-slate-900' : 'bg-slate-100'} rounded-2xl mb-8`}>
-                <button onClick={() => setMode('unscramble')} className={`px-6 py-2 rounded-xl text-sm font-bold ${mode === 'unscramble' ? (isDarkMode ? 'bg-slate-800 text-teal-400 shadow-sm' : 'bg-white text-teal-600 shadow-sm') : 'text-slate-500'}`}>
-                  {currentLanguage === 'ar' ? 'فك تشفير الحروف' : 'Unscramble'}
-                </button>
-                <button onClick={() => setMode('anagram')} className={`px-6 py-2 rounded-xl text-sm font-bold ${mode === 'anagram' ? (isDarkMode ? 'bg-slate-800 text-teal-400 shadow-sm' : 'bg-white text-teal-600 shadow-sm') : 'text-slate-500'}`}>
-                  {currentLanguage === 'ar' ? 'الجناس الناقص' : 'Anagrams'}
-                </button>
-              </div>
-              <h1 className={`text-4xl md:text-5xl font-extrabold ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-4`}>
-                {currentLanguage === 'ar'
-                  ? (mode === 'unscramble' ? 'البحث عن كلمات من حروفك' : 'محلل الجناس الناقص')
-                  : (mode === 'unscramble' ? 'Find words from your letters' : 'Anagram Solver')}
-              </h1>
-              <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'} text-lg mb-10`}>
-                {currentLanguage === 'ar'
-                  ? (mode === 'unscramble' 
-                      ? 'أدخل أي مجموعة من الحروف واكتشف جميع الكلمات الممكنة التي يمكنك تشكيلها' 
-                      : 'البحث عن الجناس الناقص والكلمات المطابقة تماماً.')
-                  : (mode === 'unscramble' 
-                      ? 'Enter any combination of letters and discover all possible words you can make' 
-                      : 'Find all perfect anagrams.')}
-              </p>
-              <div className="group">
-                <input
-                  maxLength={15}
-                  value={input}
-                  onChange={(e) => setInput(cleanInput(e.target.value).toUpperCase())}
-                  onKeyDown={(e) => e.key === 'Enter' && handleProcess()}
-                  dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}
-                  className={`w-full h-20 px-8 text-3xl font-mono border-2 ${
-                    isDarkMode 
-                      ? 'bg-slate-900 border-slate-800 text-white focus:border-teal-500' 
-                      : 'bg-white border-slate-200 text-slate-800 focus:border-teal-500'
-                  } rounded-3xl outline-none transition-all uppercase ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}
-                  placeholder={currentLanguage === 'ar' ? 'أدخل الحروف هنا...' : 'ENTER LETTERS'}
-                />
-              </div>
+          <HomeView
+            isDarkMode={isDarkMode}
+            currentLanguage={currentLanguage}
+            homeUnscrambleInput={homeUnscrambleInput}
+            setHomeUnscrambleInput={setHomeUnscrambleInput}
+            homeAnagramInput={homeAnagramInput}
+            setHomeAnagramInput={setHomeAnagramInput}
+            cleanInput={cleanInput}
+            navigateTo={navigateTo}
+          />
+        )}
 
-              {/* Advanced Filter Options (Starts with, Ends with, Contains, Word length) */}
-              {mode === 'unscramble' && (
-                <div className="mt-8 text-left" dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
-                  <button
-                    type="button"
-                    onClick={() => setIsOptionsExpanded(!isOptionsExpanded)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                      isDarkMode 
-                        ? 'text-slate-300 hover:bg-slate-900' 
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    <Sliders size={18} className="text-slate-400" />
-                    <span>{currentLanguage === 'ar' ? 'خيارات متقدمة' : 'Options'}</span>
-                    {isOptionsExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                  </button>
+        {view === 'unscrambler' && (
+          <UnscramblerView
+            isDarkMode={isDarkMode}
+            currentLanguage={currentLanguage}
+            currentLangObj={currentLangObj}
+            input={unscrambleInput}
+            setInput={setUnscrambleInput}
+            cleanInput={cleanInput}
+            filterStartsWith={filterStartsWith}
+            setFilterStartsWith={setFilterStartsWith}
+            filterEndsWith={filterEndsWith}
+            setFilterEndsWith={setFilterEndsWith}
+            filterContains={filterContains}
+            setFilterContains={setFilterContains}
+            filterWordLength={filterWordLength}
+            setFilterWordLength={setFilterWordLength}
+            isOptionsExpanded={isOptionsExpanded}
+            setIsOptionsExpanded={setIsOptionsExpanded}
+            handleProcess={handleUnscrambleProcess}
+            isProcessing={unscrambleIsProcessing}
+            isDictLoading={isDictLoading}
+            totalFound={unscrambleTotalFound}
+            sortedLengths={unscrambleSortedLengths}
+            results={unscrambleResults}
+            fetchDefinition={fetchDefinition}
+            shareWord={shareWord}
+            sharedWord={sharedWord}
+            copyToClipboard={copyToClipboard}
+            copiedWord={copiedWord}
+          />
+        )}
 
-                  <AnimatePresence>
-                    {isOptionsExpanded && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden mt-3"
-                      >
-                        <div className={`p-6 rounded-3xl border-2 ${
-                          isDarkMode 
-                            ? 'bg-slate-900/60 border-slate-850/85' 
-                            : 'bg-[#fafafa] border-slate-200'
-                        }`}>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                            {/* Starts with */}
-                            <div className="flex flex-col gap-1.5 text-left">
-                              <label className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}>
-                                {currentLanguage === 'ar' ? 'يبدأ بـ' : 'Starts with'}
-                              </label>
-                              <input
-                                type="text"
-                                value={filterStartsWith}
-                                onChange={(e) => setFilterStartsWith(cleanInput(e.target.value).toUpperCase())}
-                                placeholder={currentLanguage === 'ar' ? 'مثال: أ' : 'e.g., a'}
-                                dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}
-                                className={`h-11 px-4 rounded-xl border ${
-                                  isDarkMode 
-                                    ? 'bg-slate-950 border-slate-800 text-white focus:border-teal-500' 
-                                    : 'bg-white border-slate-200 text-slate-800 focus:border-teal-500'
-                                } outline-none text-sm transition-all ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}
-                              />
-                            </div>
-
-                            {/* Ends with */}
-                            <div className="flex flex-col gap-1.5 text-left">
-                              <label className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}>
-                                {currentLanguage === 'ar' ? 'ينتهي بـ' : 'Ends with'}
-                              </label>
-                              <input
-                                type="text"
-                                value={filterEndsWith}
-                                onChange={(e) => setFilterEndsWith(cleanInput(e.target.value).toUpperCase())}
-                                placeholder={currentLanguage === 'ar' ? 'مثال: س' : 'e.g., s'}
-                                dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}
-                                className={`h-11 px-4 rounded-xl border ${
-                                  isDarkMode 
-                                    ? 'bg-slate-950 border-slate-800 text-white focus:border-teal-500' 
-                                    : 'bg-white border-slate-200 text-slate-800 focus:border-teal-500'
-                                } outline-none text-sm transition-all ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}
-                              />
-                            </div>
-
-                            {/* Contains */}
-                            <div className="flex flex-col gap-1.5 text-left">
-                              <label className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}>
-                                {currentLanguage === 'ar' ? 'يحتوي على' : 'Contains'}
-                              </label>
-                              <input
-                                type="text"
-                                value={filterContains}
-                                onChange={(e) => setFilterContains(cleanInput(e.target.value).toUpperCase())}
-                                placeholder={currentLanguage === 'ar' ? 'مثال: ين' : 'e.g., ing'}
-                                dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}
-                                className={`h-11 px-4 rounded-xl border ${
-                                  isDarkMode 
-                                    ? 'bg-slate-950 border-slate-800 text-white focus:border-teal-500' 
-                                    : 'bg-white border-slate-200 text-slate-800 focus:border-teal-500'
-                                } outline-none text-sm transition-all ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}
-                              />
-                            </div>
-
-                            {/* Word length */}
-                            <div className="flex flex-col gap-1.5 text-left">
-                              <label className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}>
-                                {currentLanguage === 'ar' ? 'طول الكلمة' : 'Word length'}
-                              </label>
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                value={filterWordLength}
-                                onChange={(e) => setFilterWordLength(e.target.value.replace(/[^0-9]/g, ''))}
-                                placeholder={currentLanguage === 'ar' ? 'مثال: 5' : 'e.g., 5'}
-                                dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}
-                                className={`h-11 px-4 rounded-xl border ${
-                                  isDarkMode 
-                                    ? 'bg-slate-950 border-slate-800 text-white focus:border-teal-500' 
-                                    : 'bg-white border-slate-200 text-slate-800 focus:border-teal-500'
-                                } outline-none text-sm transition-all ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}
-                              />
-                            </div>
-                          </div>
-
-                          {/* Reset Filters utility */}
-                          {(filterStartsWith || filterEndsWith || filterContains || filterWordLength) && (
-                            <div className="mt-4 flex justify-end">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setFilterStartsWith('');
-                                  setFilterEndsWith('');
-                                  setFilterContains('');
-                                  setFilterWordLength('');
-                                }}
-                                className="text-xs font-semibold text-rose-500 hover:text-rose-400 transition-colors"
-                              >
-                                Clear Options
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
-
-              {/* Call to Action: Unscramble It / Find */}
-              <div className="mt-8 flex justify-center">
-                <button
-                  type="button"
-                  onClick={handleProcess}
-                  disabled={isProcessing || isDictLoading}
-                  className={`px-10 py-4 font-black rounded-2xl shadow-xl active:scale-98 transition-all flex items-center justify-center gap-2 w-full sm:w-auto min-w-[240px] text-base uppercase tracking-wider ${
-                    mode === 'unscramble'
-                      ? 'bg-[#e05300] hover:bg-[#c44700] text-white'
-                      : 'bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400 text-white dark:text-slate-950'
-                  }`}
-                >
-                  {isProcessing ? (
-                    <Loader2 className="animate-spin" size={20} />
-                  ) : (
-                    currentLanguage === 'ar'
-                      ? (mode === 'unscramble' ? 'فك تشفير الحروف' : 'بحث')
-                      : (mode === 'unscramble' ? 'Unscramble It' : 'Find')
-                  )}
-                </button>
-              </div>
-            </section>
-
-            {isDictLoading ? (
-              <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-                <Loader2 className="animate-spin text-teal-500 mb-4" size={40} />
-                <p className={`text-sm font-semibold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                  {currentLanguage === 'ar'
-                    ? `جاري تحميل قاموس اللغة ${currentLangObj.nativeName}...`
-                    : `Loading ${currentLangObj.name} wordlist database...`}
-                </p>
-                <p className="text-xs text-slate-500 mt-1">
-                  {currentLanguage === 'ar' ? 'يستغرق هذا ثانية واحدة فقط.' : 'This takes just a second.'}
-                </p>
-              </div>
-            ) : totalFound > 0 ? (
-              <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className={`mb-8 border-b ${isDarkMode ? 'border-slate-800' : 'border-slate-100'} pb-4`}>
-                  <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'} ${currentLanguage === 'ar' ? 'text-right' : 'text-left'}`}>
-                    {currentLanguage === 'ar' ? `تم العثور على ${totalFound} كلمة` : `Found ${totalFound} words`}
-                  </h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-20">
-                  {sortedLengths.map((len) => (
-                    <div key={len} className="flex flex-col">
-                      <div className={`flex justify-between items-center mb-5 pb-3 border-b-2 ${isDarkMode ? 'border-slate-800' : 'border-slate-100'}`}>
-                        <h3 className={`font-bold text-lg ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                          {currentLanguage === 'ar' ? `كلمات من ${len} أحرف` : `${len} Letter Words`}
-                        </h3>
-                        <span className={`text-xs font-bold ${isDarkMode ? 'text-teal-400 bg-teal-900/40' : 'text-teal-600 bg-teal-50'} px-3 py-1 rounded-full`}>{results[len].length}</span>
-                      </div>
-                      <div className="space-y-2">
-                        {results[len].map((word) => (
-                          <div key={word} className={`group relative flex justify-between items-center p-4 ${isDarkMode ? 'bg-slate-900 border-slate-800 hover:border-teal-500/50' : 'bg-white border-slate-200 hover:border-teal-300'} border rounded-2xl transition-all shadow-sm`}>
-                             <span className={`font-mono font-bold uppercase ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{word}</span>
-                            <div className="flex gap-1">
-                              <button onClick={() => fetchDefinition(word)} title="Define" className={`p-2 rounded-lg ${isDarkMode ? 'hover:bg-teal-400/10 text-slate-400 hover:text-teal-400' : 'hover:bg-teal-500/10 text-slate-400 hover:text-teal-600'} transition-colors`}>
-                                <Book size={14} />
-                              </button>
-                              <button onClick={() => shareWord(word)} title="Share" className={`p-2 rounded-lg ${isDarkMode ? 'hover:bg-teal-400/10 text-slate-400 hover:text-teal-400' : 'hover:bg-teal-500/10 text-slate-400 hover:text-teal-600'} transition-colors`}>
-                                {sharedWord === word ? <Check size={14} className="text-teal-500" /> : <Share2 size={14} />}
-                              </button>
-                              <button onClick={() => copyToClipboard(word)} title="Copy" className={`p-2 rounded-lg ${isDarkMode ? 'hover:bg-teal-400/10 text-slate-400 hover:text-teal-400' : 'hover:bg-teal-500/10 text-slate-400 hover:text-teal-600'} transition-colors`}>
-                                {copiedWord === word ? <Check size={14} className="text-teal-500" /> : <Copy size={14} />}
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : input.length > 0 && !isProcessing && (
-              <div className={`text-center py-20 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'} rounded-3xl border-2 border-dashed mb-12`}>
-                <p className="text-slate-400 font-medium">No words found. Try different letters!</p>
-              </div>
-            )}
-
-            <div id="results-mid-ad" className={`w-full h-[250px] ${isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-600' : 'bg-slate-50 border-slate-200 text-slate-400'} border border-dashed rounded-xl mb-12 flex items-center justify-center text-xs`}>Middle Ad</div>
-            
-            {/* Educational SEO Content Section */}
-            <section className={`mt-12 pt-16 border-t ${isDarkMode ? 'border-slate-800' : 'border-slate-100'} max-w-4xl mx-auto px-4`}>
-              <div className="space-y-12">
-                {mode === 'unscramble' ? (
-                  /* Word Unscrambler Info */
-                  <div className="space-y-8">
-                    <div className={`${isDarkMode ? 'text-teal-400' : 'text-teal-600'} flex items-center gap-3`}>
-                      <Search size={28} />
-                      <h2 className={`text-3xl font-black tracking-tight ${isDarkMode ? 'text-slate-200' : 'text-slate-900'}`}>
-                        {currentLanguage === 'ar' ? 'دليل فك تشفير الحروف الشامل' : 'Ultimate Word Unscrambler Guide'}
-                      </h2>
-                    </div>
-
-                    <p className={`text-base md:text-lg leading-relaxed ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                      {currentLanguage === 'ar' ? (
-                        'أهلاً بك في منصة فك تشفير الحروف المتقدمة. عندما تواجه مجموعة من الحروف العشوائية أو المبعثرة في ألعاب الكلمات الشهيرة، فإن خدمتنا المجانية تساعدك في العثور على جميع الكلمات الصالحة في ثوانٍ معدودة. يعتمد محركنا على تقنيات فرز محلية خفيفة وسريعة للغاية للبحث الفوري دون أي تتبع.'
-                      ) : (
-                        'Welcome to the premier digital word unscrambling platform. When you are faced with a challenging rack of jumbled letters or random Scrabble tiles, our professional-grade utility is engineered to instantly resolve them into highly valid, playable words. By processing calculations entirely on your device, we deliver sub-millisecond sorting speeds with absolute data privacy.'
-                      )}
-                    </p>
-                    
-                    <div>
-                      <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-200' : 'text-slate-800'} mb-3`}>
-                        {currentLanguage === 'ar' ? 'كيف يعمل محرك فك تشفير الحروف؟' : 'How the Unscrambler Engine Operates'}
-                      </h3>
-                      <p className={`text-sm md:text-base leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-500'} mb-4`}>
-                        {currentLanguage === 'ar' ? (
-                          'يقوم المحرك بتحويل الكلمة المدخلة إلى تمثيل رقمي يعتمد على تكرار كل حرف. ثم يقارن هذا التمثيل بآلاف الكلمات المخزنة في القاموس للتأكد من أن الكلمة المستهدفة هي جزء حقيقي من حروفك.'
-                        ) : (
-                          'Our high-performance word-finding system uses a modular local search workflow to prune over 370,000 dictionary words instantly. Here is a technical breakdown of how we analyze your jumbled letters:'
-                        )}
-                      </p>
-
-                      <div className="overflow-x-auto my-6 border rounded-xl overflow-hidden shadow-sm">
-                        <table className="min-w-full divide-y divide-slate-200 text-xs md:text-sm">
-                          <thead className={isDarkMode ? 'bg-slate-900 text-slate-300' : 'bg-slate-50 text-slate-700'}>
-                            <tr>
-                              <th className="px-4 py-3 text-left font-bold tracking-wider">Step Phase</th>
-                              <th className="px-4 py-3 text-left font-bold tracking-wider">Algorithmic Name</th>
-                              <th className="px-4 py-3 text-left font-bold tracking-wider">Processing Description</th>
-                              <th className="px-4 py-3 text-left font-bold tracking-wider">Device Latency</th>
-                            </tr>
-                          </thead>
-                          <tbody className={`divide-y divide-slate-200 ${isDarkMode ? 'bg-slate-950 text-slate-400' : 'bg-white text-slate-600'}`}>
-                            <tr>
-                              <td className="px-4 py-3 font-semibold text-teal-500">Phase 1</td>
-                              <td className="px-4 py-3 font-semibold">Histogram Mapping</td>
-                              <td className="px-4 py-3">Generates a local key-value character frequency map of the user\'s rack letters.</td>
-                              <td className="px-4 py-3 font-mono text-xs">~0.01 ms</td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-3 font-semibold text-teal-500">Phase 2</td>
-                              <td className="px-4 py-3 font-semibold">Length Boundary Pruning</td>
-                              <td className="px-4 py-3">Instantly discards all dictionary candidates longer than the user\'s letter rack.</td>
-                              <td className="px-4 py-3 font-mono text-xs">~0.10 ms</td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-3 font-semibold text-teal-500">Phase 3</td>
-                              <td className="px-4 py-3 font-semibold">Multi-Character Subset Check</td>
-                              <td className="px-4 py-3">Performs subset checks, ensuring each letter count does not exceed the target histogram.</td>
-                              <td className="px-4 py-3 font-mono text-xs">~0.25 ms</td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-3 font-semibold text-teal-500">Phase 4</td>
-                              <td className="px-4 py-3 font-semibold">RegEx Pattern Interception</td>
-                              <td className="px-4 py-3">Applies advanced options filters (Starts with, Ends with, contains, specific lengths).</td>
-                              <td className="px-4 py-3 font-mono text-xs">~0.04 ms</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-200' : 'text-slate-800'} mb-3`}>
-                        {currentLanguage === 'ar' ? 'توزيع نقاط الحروف الرسمي (Scrabble)' : 'Official Scrabble Letter Tile Point Distribution'}
-                      </h3>
-                      <p className={`text-sm md:text-base leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-500'} mb-4`}>
-                        {currentLanguage === 'ar' ? (
-                          'لتحقيق أقصى عدد من النقاط، من المهم فهم قيمة كل حرف. إليك جدول يوضح قيم النقاط الرسمية للحروف الإنجليزية الشائعة في اللعبة:'
-                        ) : (
-                          'To secure massive scores during competitive matches, it is crucial to recognize the individual point weights of the tiles you unscramble. High-value letters like Q, Z, J, and X should be positioned carefully on premium board multipliers:'
-                        )}
-                      </p>
-
-                      <div className="overflow-x-auto my-6 border rounded-xl overflow-hidden shadow-sm">
-                        <table className="min-w-full divide-y divide-slate-200 text-xs md:text-sm text-center">
-                          <thead className={isDarkMode ? 'bg-slate-900 text-slate-300' : 'bg-slate-50 text-slate-700'}>
-                            <tr>
-                              <th className="px-4 py-3 font-bold tracking-wider">Point Value</th>
-                              <th className="px-4 py-3 font-bold tracking-wider">English Tiles / Characters</th>
-                              <th className="px-4 py-3 font-bold tracking-wider">Strategic Priority</th>
-                            </tr>
-                          </thead>
-                          <tbody className={`divide-y divide-slate-200 ${isDarkMode ? 'bg-slate-950 text-slate-400' : 'bg-white text-slate-600'}`}>
-                            <tr>
-                              <td className="px-4 py-3 font-bold text-teal-500">1 Point</td>
-                              <td className="px-4 py-3 font-mono text-sm tracking-widest">A, E, I, O, U, L, N, S, T, R</td>
-                              <td className="px-4 py-3 text-xs">High frequency stems. Use to build prefixes/suffixes.</td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-3 font-bold text-teal-500">2 Points</td>
-                              <td className="px-4 py-3 font-mono text-sm tracking-widest">D, G</td>
-                              <td className="px-4 py-3 text-xs">Versatile endings. Great for past-tense formations.</td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-3 font-bold text-teal-500">3 Points</td>
-                              <td className="px-4 py-3 font-mono text-sm tracking-widest">B, C, M, P</td>
-                              <td className="px-4 py-3 text-xs">Consonant dumps. Look for double-letter squares.</td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-3 font-bold text-teal-500">4 Points</td>
-                              <td className="px-4 py-3 font-mono text-sm tracking-widest">F, H, V, W, Y</td>
-                              <td className="px-4 py-3 text-xs">High leverage. Combine with vowels for quick 15+ pt turns.</td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-3 font-bold text-teal-500">5 Points</td>
-                              <td className="px-4 py-3 font-mono text-sm tracking-widest">K</td>
-                              <td className="px-4 py-3 text-xs">Niche tile. Essential for short high-scoring words.</td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-3 font-bold text-teal-500">8 Points</td>
-                              <td className="px-4 py-3 font-mono text-sm tracking-widest">J, X</td>
-                              <td className="px-4 py-3 text-xs">Premium targets. Always aim to place on DW or TL squares.</td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-3 font-bold text-teal-500">10 Points</td>
-                              <td className="px-4 py-3 font-mono text-sm tracking-widest">Q, Z</td>
-                              <td className="px-4 py-3 text-xs">Maximum weight. Look for short words (e.g., QI, ZA) immediately.</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-
-                    <div className={`${isDarkMode ? 'bg-teal-950/40 border-teal-500/20 text-teal-400' : 'bg-teal-50 border-teal-100 text-teal-800'} p-6 rounded-2xl border leading-relaxed text-sm`}>
-                      <strong className="block text-base mb-2 font-bold">Pro-Level Strategy: Scoring the Elusive "Bingo"</strong>
-                      In both Scrabble and Words with Friends, utilizing all 7 tiles in a single turn grants a massive 50-point bonus (referred to as a "Bingo"). Our unscrambler tool organizes results by length, allowing you to instantly scan for 7-letter words and plan your rack combinations. To maximize point totals, prioritize keeping common suffixes like "ING" or "ED" on your rack to transition into multiple bingo options during your next turns.
-                    </div>
-                  </div>
-                ) : (
-                  /* Anagram Solver Info */
-                  <div className="space-y-8">
-                    <div className={`${isDarkMode ? 'text-teal-400' : 'text-teal-600'} flex items-center gap-3`}>
-                      <Zap size={28} />
-                      <h2 className={`text-3xl font-black tracking-tight ${isDarkMode ? 'text-slate-200' : 'text-slate-900'}`}>
-                        {currentLanguage === 'ar' ? 'محلل الجناس الناقص الاحترافي' : 'Professional Anagram Solver Guide'}
-                      </h2>
-                    </div>
-
-                    <p className={`text-base md:text-lg leading-relaxed ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                      {currentLanguage === 'ar' ? (
-                        'أهلاً بك في محلل الجناس الناقص الفوري. هذا المحرك مخصص للعثور على الكلمات التي تطابق تماماً طول وبنية الحروف التي تدخلها، حيث يجب استخدام كل حرف مرة واحدة بالضبط دون أي زيادة أو نقصان.'
-                      ) : (
-                        'Welcome to the absolute center of anagram permutation matching. In contrast to a general jumble search, our Anagram Solver performs an exact character-to-character mapping. This ensures that every resulting match utilizes every single input letter exactly once.'
-                      )}
-                    </p>
-                    
-                    <div>
-                      <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-200' : 'text-slate-800'} mb-3`}>
-                        {currentLanguage === 'ar' ? 'الفروق الهيكلية بين فك الحروف والجناس' : 'Structural Differences: Unscrambling vs. Anagrams'}
-                      </h3>
-                      <p className={`text-sm md:text-base leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-500'} mb-4`}>
-                        {currentLanguage === 'ar' ? (
-                          'لتسهيل فهم الخيارات، إليك جدولاً يوضح الفروق الجوهرية والتقنية بين وضعي التشغيل المتاحين في محركنا:'
-                        ) : (
-                          'Understanding when to use Anagram mode versus standard Unscramble mode is key to game mastery. Refer to this operational differences matrix:'
-                        )}
-                      </p>
-
-                      <div className="overflow-x-auto my-6 border rounded-xl overflow-hidden shadow-sm">
-                        <table className="min-w-full divide-y divide-slate-200 text-xs md:text-sm">
-                          <thead className={isDarkMode ? 'bg-slate-900 text-slate-300' : 'bg-slate-50 text-slate-700'}>
-                            <tr>
-                              <th className="px-4 py-3 text-left font-bold tracking-wider">Metric Parameter</th>
-                              <th className="px-4 py-3 text-left font-bold tracking-wider">Word Unscrambler Mode</th>
-                              <th className="px-4 py-3 text-left font-bold tracking-wider">Anagram Solver Mode</th>
-                            </tr>
-                          </thead>
-                          <tbody className={`divide-y divide-slate-200 ${isDarkMode ? 'bg-slate-950 text-slate-400' : 'bg-white text-slate-600'}`}>
-                            <tr>
-                              <td className="px-4 py-3 font-semibold">Mathematical Relation</td>
-                              <td className="px-4 py-3">Subset Mapping (Power Set)</td>
-                              <td className="px-4 py-3">Strict Permutation Mapping (n!)</td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-3 font-semibold">Resulting Word Lengths</td>
-                              <td className="px-4 py-3">Varying (lengths 2 up to Input Length)</td>
-                              <td className="px-4 py-3">Fixed (must exactly equal Input Length)</td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-3 font-semibold">Best Used For</td>
-                              <td className="px-4 py-3">Scrabble, Words with Friends, Boggle</td>
-                              <td className="px-4 py-3">Daily Newspaper Jumbles, Cryptic Crosswords</td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-3 font-semibold">Blank Wildcard Capacity</td>
-                              <td className="px-4 py-3">Supported (rotates blanks dynamically)</td>
-                              <td className="px-4 py-3">Strict character matches only</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-
-                    <div className={`${isDarkMode ? 'bg-teal-950/40 border-teal-500/20 text-teal-400' : 'bg-teal-50 border-teal-100 text-teal-800'} p-6 rounded-2xl border leading-relaxed text-sm`}>
-                      <strong className="block text-base mb-2 font-bold">Linguistic Tip: Spotting Sub-Anagrams</strong>
-                      If you are having trouble solving a complex jumble or finding a perfect anagram, write the letters down in a circle rather than a horizontal line. This visual pattern bypasses our brain\'s natural reading habits and helps you discover prefix matches (like RE-, DE-, or CON-) much quicker. Or simply paste your tiles into our tool and let the client-side engine find all permutations instantly!
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              <div id="bottom-ad-shelf" className={`w-full h-[90px] ${isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-600' : 'bg-slate-50 border-slate-200 text-slate-400'} border border-dashed rounded-xl mt-16 flex items-center justify-center text-xs`}>Footer Ad Slot</div>
-            </section>
-
-            {/* SEO FAQ Section */}
-            <section className={`mt-20 py-20 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border-y -mx-6 md:-mx-12 px-6 md:px-12`}>
-              <div className="max-w-4xl mx-auto">
-                <div className="text-center mb-16">
-                  <h2 className={`text-3xl md:text-4xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-4`}>Frequently Asked Questions</h2>
-                  <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Everything you need to know about LetterHub and word unscrambling.</p>
-                </div>
-                
-                <div className="space-y-4">
-                  {FAQ_ITEMS.map((item, idx) => (
-                    <details key={idx} className={`group border ${isDarkMode ? 'border-slate-800 bg-slate-950/50 hover:bg-slate-950 hover:border-teal-500/30' : 'border-slate-100 bg-slate-50/50 hover:bg-white hover:border-teal-200'} rounded-2xl transition-all`}>
-                      <summary className="flex justify-between items-center p-6 cursor-pointer list-none">
-                        <h3 className={`font-bold pr-8 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{item.question}</h3>
-                        <ChevronDown className="text-slate-400 group-open:rotate-180 transition-transform" size={20} />
-                      </summary>
-                      <div className={`px-6 pb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'} leading-relaxed text-sm`}>
-                        {item.answer}
-                      </div>
-                    </details>
-                  ))}
-                </div>
-              </div>
-            </section>
-
-          </>
+        {view === 'anagram-solver' && (
+          <AnagramSolverView
+            isDarkMode={isDarkMode}
+            currentLanguage={currentLanguage}
+            currentLangObj={currentLangObj}
+            input={anagramInput}
+            setInput={setAnagramInput}
+            cleanInput={cleanInput}
+            handleProcess={handleAnagramProcess}
+            isProcessing={anagramIsProcessing}
+            isDictLoading={isDictLoading}
+            totalFound={anagramTotalFound}
+            sortedLengths={anagramSortedLengths}
+            results={anagramResults}
+            fetchDefinition={fetchDefinition}
+            shareWord={shareWord}
+            sharedWord={sharedWord}
+            copyToClipboard={copyToClipboard}
+            copiedWord={copiedWord}
+          />
         )}
 
         {view === 'dictionary' && (
@@ -1555,8 +1217,11 @@ export default function App() {
                 onBack={() => navigateTo('blog')} 
                 isDarkMode={isDarkMode}
                 onNavigateToTool={(mode) => {
-                  setMode(mode);
-                  navigateTo('home');
+                  if (mode === 'unscramble') {
+                    navigateTo('unscrambler');
+                  } else {
+                    navigateTo('anagram-solver');
+                  }
                 }}
               />
             )}
@@ -1572,15 +1237,41 @@ export default function App() {
             </h1>
             
             <p className={`text-lg md:text-xl font-bold mb-8 leading-relaxed ${isDarkMode ? 'text-teal-400' : 'text-teal-700'}`}>
-              <strong>UnscramblerHub is the flagship word-game engine of the LetterHub software suite, dedicated to providing lightning-fast, client-side word unscrambling utilities at our official home <a href="https://unscramblerhub.com" className="underline hover:text-teal-500">https://unscramblerhub.com</a>.</strong>
+              Welcome to UnscramblerHub.com, your ultimate digital companion for word games, puzzles, and linguistic exploration.
             </p>
 
             <div className={`prose max-w-none ${isDarkMode ? 'text-slate-300' : 'text-slate-700'} mb-12 space-y-6 text-base md:text-lg`}>
               <p className="leading-relaxed">
-                We believe that finding anagrams and checking word definitions should be clean, fast, and secure. That is why we built our solvers to run completely on your device inside your browser without tracking your searches. All of our operations are unified under the LetterHub brand to offer a trustworthy and reliable user experience.
+                UnscramblerHub was founded by a passionate team of wordsmiths, board game enthusiasts, and puzzle lovers who understand both the joy of a perfect word play and the deep frustration of hitting a mental block. Whether you are locked in a high-stakes family battle of Scrabble, trying to preserve your daily streak on Wordle, deciphering a complex crossword puzzle, or tackling a classic anagram jumble, we built this platform to ensure you never stay stuck for long.
               </p>
 
-              <h2 className={`text-2xl font-bold mt-10 mb-4 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+              <h2 className={`text-2xl font-bold mt-10 mb-4 ${isDarkMode ? 'text-slate-105' : 'text-slate-800'}`}>
+                Our Mission
+              </h2>
+              <p className="leading-relaxed">
+                Our core goal is to bridge the gap between utility and education. We don't believe an anagram solver should just be a tool for quick answers; we believe it should be a powerful instrument for learning. We design our algorithms to quickly and accurately untangle chaotic letter combinations, while actively structuring our platform to help users discover new vocabulary, understand English syllable structures, and train their minds to see patterns faster.
+              </p>
+
+              <h2 className={`text-2xl font-bold mt-10 mb-4 ${isDarkMode ? 'text-slate-105' : 'text-slate-800'}`}>
+                What We Value
+              </h2>
+              <ul className="list-disc pl-6 space-y-4">
+                <li>
+                  <strong>Accessibility:</strong> We believe powerful digital tools should be clean, lightning-fast, intuitive, and completely free to use on any device.
+                </li>
+                <li>
+                  <strong>Linguistic Integrity:</strong> Our solvers rely on verified, comprehensive master dictionaries that align with standard competitive word-game regulations.
+                </li>
+                <li>
+                  <strong>Cognitive Growth:</strong> We don't just want to help you win your next turn—we want to help you build a richer, deeper vocabulary that stays with you long after the game board is packed away.
+                </li>
+              </ul>
+
+              <p className="leading-relaxed pt-4">
+                Thank you for making UnscramblerHub your go-to destination for all things words. Grab your letter tiles, clear your rack, and let's solve some puzzles together!
+              </p>
+
+              <h2 className={`text-2xl font-bold mt-10 mb-4 ${isDarkMode ? 'text-slate-105' : 'text-slate-800'}`}>
                 Verified Solver Technology & Core Lexicons
               </h2>
               
@@ -1590,7 +1281,7 @@ export default function App() {
 
               <div className="overflow-x-auto my-6 border rounded-xl overflow-hidden shadow-sm">
                 <table className="min-w-full divide-y divide-slate-200 text-sm">
-                  <thead className={isDarkMode ? 'bg-slate-900' : 'bg-slate-50'}>
+                  <thead className={isDarkMode ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-800'}>
                     <tr>
                       <th className="px-4 py-3 text-left font-bold tracking-wider">Service Tool</th>
                       <th className="px-4 py-3 text-left font-bold tracking-wider">Core Technology</th>
@@ -1620,19 +1311,11 @@ export default function App() {
                   </tbody>
                 </table>
               </div>
-
-              <h2 className={`text-2xl font-bold mt-10 mb-4 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
-                Our Commitment to Human Quality
-              </h2>
-              
-              <p className="leading-relaxed">
-                Every solver tool and strategic article published on UnscramblerHub is researched, structured, and managed by experienced human word-game strategists. We manually calibrate our anagram filters, update our word directories, and proofread our guides to ensure we provide highly accurate, human-curated resources for word game lovers around the world.
-              </p>
             </div>
 
             <div className="flex justify-center mt-12">
               <button onClick={() => navigateTo('home')} className={`flex items-center gap-2 ${isDarkMode ? 'text-teal-400 border-teal-400 hover:bg-teal-400/10' : 'text-teal-700 border-teal-700 hover:bg-teal-50 border'} font-bold px-6 py-3 rounded-2xl transition-colors`}>
-                <ArrowLeft size={18} /> Back to Solver
+                <ArrowLeft size={18} /> Back to Home
               </button>
             </div>
           </div>
@@ -1672,7 +1355,7 @@ export default function App() {
               ))}
             </div>
             <button onClick={() => navigateTo('home')} className={`mt-16 flex items-center gap-2 ${isDarkMode ? 'text-teal-400' : 'text-teal-600'} font-bold`}>
-              <ArrowLeft size={18} /> Back to Solver
+              <ArrowLeft size={18} /> Back to Home
             </button>
           </div>
         )}
@@ -1787,7 +1470,206 @@ export default function App() {
 
             <div className="flex justify-center mt-12">
               <button onClick={() => navigateTo('home')} className={`flex items-center gap-2 ${isDarkMode ? 'text-teal-400 border-teal-400 hover:bg-teal-400/10' : 'text-teal-700 border-teal-700 hover:bg-teal-50 border'} font-bold px-6 py-3 rounded-2xl transition-colors`}>
-                <ArrowLeft size={18} /> Back to Solver
+                <ArrowLeft size={18} /> Back to Home
+              </button>
+            </div>
+          </div>
+        )}
+
+        {view === 'strategy' && (
+          <div className="max-w-4xl mx-auto w-full py-16 px-4">
+            <link rel="canonical" href="https://unscramblerhub.com/strategy" />
+            
+            <h1 className={`text-4xl md:text-5xl font-black mb-6 tracking-tight text-center ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+              The Psychology and Strategy of Word Unscrambling
+            </h1>
+            <p className={`text-lg md:text-xl text-center font-bold mb-12 leading-relaxed ${isDarkMode ? 'text-teal-400' : 'text-teal-700'}`}>
+              How to Train Your Brain to See Hidden Words
+            </p>
+
+            {/* Interactive Strategy Feature: Cognitive Training Playground */}
+            <div className={`p-8 rounded-3xl mb-12 border ${
+              isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'
+            }`}>
+              <h3 className={`text-lg font-black uppercase tracking-widest text-center mb-6 text-xs ${isDarkMode ? 'text-teal-400' : 'text-teal-700'}`}>
+                Cognitive Training: Interactive Unscrambler Game
+              </h3>
+              <p className="text-sm text-center mb-8 max-w-lg mx-auto leading-relaxed">
+                Staring at static letter rows creates a cognitive bottleneck. Physically moving your letter tiles is the fastest way to trigger pattern recognition. Try unscrambling the word below by clicking on the tiles!
+              </p>
+              
+              {/* Interactive Unscramble Trainer */}
+              <div className="flex flex-col items-center justify-center gap-6">
+                <div className="flex gap-2">
+                  {['A', 'N', 'A', 'G', 'R', 'A', 'M'].map((letter, idx) => (
+                    <span
+                      key={idx}
+                      className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl border flex items-center justify-center font-black text-lg md:text-xl cursor-pointer hover:-translate-y-1 transition-transform select-none ${
+                        isDarkMode ? 'bg-slate-950 border-slate-800 text-white hover:border-teal-400 shadow-md shadow-black/45' : 'bg-white border-slate-250 text-slate-800 hover:border-teal-600 shadow-sm'
+                      }`}
+                    >
+                      {letter}
+                    </span>
+                  ))}
+                </div>
+                <div className="text-center mt-2">
+                  <span className={`inline-block px-4 py-2 rounded-xl text-xs font-bold uppercase ${
+                    isDarkMode ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-100 text-teal-800'
+                  }`}>
+                    Hint: A word or phrase formed by rearranging the letters of another
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className={`prose max-w-none ${isDarkMode ? 'text-slate-300' : 'text-slate-700'} space-y-8 text-base md:text-lg leading-relaxed`}>
+              
+              <section className="space-y-4">
+                <p>
+                  For decades, word games have held a legendary status in the realm of casual gaming and competitive puzzles. From the classic living room battles of Scrabble® to the global, daily ritual of Wordle®, millions of people spend their mornings and evenings staring at a jumble of letters, trying to force order out of chaos.
+                </p>
+                <p>
+                  But what actually happens inside the human brain when we try to unscramble words? Why do some people spot a seven-letter panagram instantly, while others struggle to find a basic three-letter word in the exact same pile?
+                </p>
+                <p>
+                  Unscrambling words isn't just an innate talent; it is a cognitive skill rooted in visual psychology, pattern recognition, and structural linguistics. By understanding how your brain processes mixed-up letter strings, you can actively train your mind to see hidden words faster, elevate your competitive game play, and turn any word solver tool into a powerful personal coach.
+                </p>
+              </section>
+
+              <section className="space-y-4 pt-4">
+                <h2 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                  The Cognitive Science Behind Anagrams
+                </h2>
+                <p>
+                  To master word games, it helps to first understand the mental hurdles your brain must overcome. When you read a normal sentence, your brain doesn't actually process every letter individually. Instead, it recognizes words as complete shapes—a cognitive phenomenon known as <strong>word shape recognition</strong> or <strong>orthographic processing</strong>.
+                </p>
+                <p>
+                  When letters are scrambled into an anagram, this shortcut backfires. Your brain tries to read the jumble as a cohesive unit, gets confused by the lack of a familiar shape, and experiences a form of cognitive friction.
+                </p>
+                <p>
+                  Psychologists have noted that our brains love order. When faced with a word scramble, your working memory attempts to mentally rotate, shift, and substitute letters into configurations that match your internal lexicon (your mental dictionary). If your letter pool contains a rare letter like Q, X, or Z, the brain often fixates heavily on that outlier, creating a mental bottleneck that blocks you from noticing simpler vowel-consonant arrangements hiding right next to it.
+                </p>
+              </section>
+
+              <section className="space-y-6 pt-4">
+                <h2 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                  Advanced Tactics for Competitive Word Play
+                </h2>
+                <p>
+                  Whether you are matching wits in Words with Friends® or competing in a local Scrabble® tournament, relying on raw intuition will only get you so far. Top-tier players utilize systematic visual strategies to dismantle word puzzles piece by piece.
+                </p>
+
+                <div className="space-y-4 pl-4 border-l-2 border-teal-500/35">
+                  <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                    1. The Spatial Re-arrangement Technique
+                  </h3>
+                  <p>
+                    Staring at a stagnant row of tiles forces your brain to repeatedly view the same incorrect patterns. One of the simplest yet most effective adjustments you can make is to physically move your tiles.
+                  </p>
+                  <ul className="list-disc pl-6 space-y-2 text-sm md:text-base">
+                    <li>
+                      <strong>The Circular Method:</strong> If playing a digital game, or if you can move your physical tiles, arrange the letters in a circle rather than a linear line. A circle eliminates the concept of a "beginning" and an "ending," allowing your peripheral vision to naturally bridge vowels and consonants from entirely new angles.
+                    </li>
+                    <li>
+                      <strong>The Vowel/Consonant Split:</strong> Separate your vowels (A, E, I, O, U) from your consonants. Push the vowels to the top row and the consonants to the bottom. This layout mirrors the basic architectural blueprint of the English language, making it instantly easier to see how many syllables you can construct.
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="space-y-4 pl-4 border-l-2 border-teal-500/35">
+                  <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                    2. High-Value Tile Anchoring
+                  </h3>
+                  <p>
+                    In games like Scrabble®, standard letters like E, A, R, and T are easy to place but yield low point values. Conversely, letters like J, K, Q, X, and Z are high-scoring goldmines. To maximize your score, practice anchoring.
+                  </p>
+                  <ul className="list-disc pl-6 space-y-2 text-sm md:text-base">
+                    <li>
+                      Pick your highest-value letter or your rarest consonant.
+                    </li>
+                    <li>
+                      Mentally or physically test that letter in the three primary word positions: at the very beginning of a word, in the exact middle, or at the very end.
+                    </li>
+                    <li>
+                      Build outward from that specific anchor point rather than trying to puzzle out all seven or eight letters simultaneously.
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="space-y-4 pl-4 border-l-2 border-teal-500/35">
+                  <h3 className={`text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                    3. Syllable and Morphological Tracking
+                  </h3>
+                  <p>
+                    Instead of trying to find a massive, complex word out of nowhere, look for small, foundational structural units called morphemes.
+                  </p>
+                  <ul className="list-disc pl-6 space-y-2 text-sm md:text-base">
+                    <li>
+                      Scan your letters for common combinations that frequently appear together in English speech, such as CH, SH, TH, WH, PH, CK, and QU.
+                    </li>
+                    <li>
+                      When you identify a pair like TH, stack those two tiles directly on top of each other or move them close together. By treating a letter pair as a single functional unit, you drastically reduce the cognitive load on your working memory, transforming an overwhelming seven-letter problem into a much simpler five-step puzzle.
+                    </li>
+                  </ul>
+                </div>
+              </section>
+
+              <section className="space-y-4 pt-4">
+                <h2 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                  How to Use a Word Unscrambler Responsibly as a Study Guide
+                </h2>
+                <p>
+                  There is a common misconception that utilizing a digital word solver is simply "cheating." While using an unscrambler mid-game to defeat an opponent without their knowledge defeats the competitive spirit, these tools are actually invaluable linguistic aids when integrated into your regular practice routine.
+                </p>
+
+                {/* Study Flow Diagram */}
+                <div className={`p-6 rounded-2xl border text-center my-8 ${
+                  isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-100/50 border-slate-250'
+                }`}>
+                  <h4 className={`text-xs uppercase font-black tracking-widest mb-4 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    The Ideal Post-Game Study Flow
+                  </h4>
+                  <div className="flex flex-col md:flex-row items-center justify-center gap-3 text-xs font-bold font-mono">
+                    <span className={`px-4 py-2 rounded-lg ${isDarkMode ? 'bg-slate-900 border border-slate-800 text-teal-400' : 'bg-white border border-slate-200 text-teal-700 shadow-sm'}`}>1. Play Match</span>
+                    <span className="text-slate-400">→</span>
+                    <span className={`px-4 py-2 rounded-lg ${isDarkMode ? 'bg-slate-900 border border-slate-800 text-teal-400' : 'bg-white border border-slate-200 text-teal-700 shadow-sm'}`}>2. Save Board State</span>
+                    <span className="text-slate-400">→</span>
+                    <span className={`px-4 py-2 rounded-lg ${isDarkMode ? 'bg-slate-900 border border-slate-800 text-teal-400' : 'bg-white border border-slate-200 text-teal-700 shadow-sm'}`}>3. Run Solver</span>
+                    <span className="text-slate-400">→</span>
+                    <span className={`px-4 py-2 rounded-lg ${isDarkMode ? 'bg-slate-900 border border-slate-800 text-teal-400' : 'bg-white border border-slate-200 text-teal-700 shadow-sm'}`}>4. Analyze Missed Words</span>
+                  </div>
+                </div>
+
+                <p>
+                  Grandmasters in chess use software to analyze their completed games and find missed tactical opportunities. You can use UnscramblerHub in the exact same manner:
+                </p>
+                <ul className="list-disc pl-6 space-y-3 text-sm md:text-base">
+                  <li>
+                    <strong>Post-Game Diagnostics:</strong> After completing a tough match or a daily word puzzle, input the exact rack of letters you struggled with into the solver. Look at the highest-scoring words you completely missed. Ask yourself: Why didn't I see that combination? Was I trapped by a prefix? Did I misjudge my vowel distribution?
+                  </li>
+                  <li>
+                    <strong>Active Vocabulary Expansion:</strong> When the solver generates a high-scoring or unusual word that you’ve never seen before, don't just gloss over it. Look up its definition, understand its part of speech, and commit it to memory. The next time those specific tiles land on your rack, you won't need a tool—your trained brain will recognize the shape instantly.
+                  </li>
+                  <li>
+                    <strong>Pattern Familiarization:</strong> Using a solver exposes you to the structural boundaries of language. You will start to notice how frequently certain suffixes like -OUS or -ISM create massive scoring spikes, intuitively changing how you conserve and manage your letter tiles in future games.
+                  </li>
+                </ul>
+              </section>
+
+              <section className="space-y-4 pt-4">
+                <h2 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                  Conclusion: Exercise Your Mind
+                </h2>
+                <p>
+                  At its core, word unscrambling is a beautiful synthesis of logic, visual processing, and language art. Your brain is highly adaptive; the more you challenge it to break down complex, chaotic letter clusters, the faster and sharper your linguistic instincts will become. Use structural strategies, change your physical perspective when you hit a wall, and utilize your word unscrambler as an interactive coach to permanently level up your word-gaming skills.
+                </p>
+              </section>
+
+            </div>
+
+            <div className="flex justify-center mt-12">
+              <button onClick={() => navigateTo('home')} className={`flex items-center gap-2 ${isDarkMode ? 'text-teal-400 border-teal-400 hover:bg-teal-400/10' : 'text-teal-700 border-teal-700 hover:bg-teal-50 border'} font-bold px-6 py-3 rounded-2xl transition-colors`}>
+                <ArrowLeft size={18} /> Back to Home
               </button>
             </div>
           </div>
@@ -1806,16 +1688,21 @@ export default function App() {
           <div>
             <h5 className="text-white font-bold mb-4 font-mono uppercase tracking-widest text-[10px]">Tools</h5>
             <ul className="space-y-2 text-xs">
-              <li><button onClick={() => navigateTo('home')} className="hover:text-teal-400 text-left">Scrabble Unscrambler</button></li>
-              <li><button onClick={() => navigateTo('home')} className="hover:text-teal-400 text-left">Anagram Solver</button></li>
+              <li><button onClick={() => navigateTo('unscrambler')} className="hover:text-teal-400 text-left">Scrabble Unscrambler</button></li>
+              <li><button onClick={() => navigateTo('anagram-solver')} className="hover:text-teal-400 text-left">Anagram Solver</button></li>
               <li><button onClick={() => navigateTo('words-az')} className="hover:text-teal-400 text-left">A-Z Word Finder</button></li>
             </ul>
           </div>
-          <div><h5 className="text-white font-bold mb-4 font-mono uppercase tracking-widest text-[10px]">Company</h5><ul className="space-y-2 text-xs"><li><button onClick={() => navigateTo('about')} className="hover:text-teal-400">About</button></li><li><button onClick={() => navigateTo('blog')} className="hover:text-teal-400">Blog</button></li><li><button onClick={() => navigateTo('contact')} className="hover:text-teal-400">Contact</button></li></ul></div>
+          <div><h5 className="text-white font-bold mb-4 font-mono uppercase tracking-widest text-[10px]">Company</h5><ul className="space-y-2 text-xs"><li><button onClick={() => navigateTo('about')} className="hover:text-teal-400">About</button></li><li><button onClick={() => navigateTo('blog')} className="hover:text-teal-400">Blog</button></li><li><button onClick={() => navigateTo('strategy')} className="hover:text-teal-400 text-left">Strategy Guide</button></li><li><button onClick={() => navigateTo('contact')} className="hover:text-teal-400">Contact</button></li></ul></div>
           <div><h5 className="text-white font-bold mb-4 font-mono uppercase tracking-widest text-[10px]">Privacy</h5><ul className="space-y-2 text-xs"><li><button onClick={() => navigateTo('policy')} className="hover:text-teal-400">Policy</button></li><li><button onClick={() => navigateTo('terms')} className="hover:text-teal-400">Terms</button></li></ul></div>
         </div>
-        <div className="max-w-7xl mx-auto w-full pt-12 mt-12 border-t border-slate-800/50 text-[10px] uppercase tracking-widest text-slate-500 font-black">
-           © 2024 LetterHub • All Rights Reserved
+        <div className="max-w-7xl mx-auto w-full pt-12 mt-12 border-t border-slate-800/50">
+          <p className="text-[10px] uppercase tracking-widest text-slate-500 font-black mb-4">
+             © 2024 LetterHub • All Rights Reserved
+          </p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-600 normal-case font-normal leading-relaxed max-w-5xl">
+            <strong>Legal Disclaimer:</strong> UnscramblerHub.com is an independent word-game utility and educational resource. UnscramblerHub is not affiliated with, authorized, maintained, sponsored, or endorsed by Hasbro Inc. (owners of Scrabble®), Mattel Inc., The New York Times Company (owners of Wordle®), or any of their respective affiliates, subsidiaries, or licensors. All trademarks, logos, and copyrights relating to these games are the sole property of their respective owners. This tool is intended strictly for educational and informational purposes.
+          </p>
         </div>
       </footer>
 
