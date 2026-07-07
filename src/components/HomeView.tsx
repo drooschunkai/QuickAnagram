@@ -1,5 +1,6 @@
 import { Search, Zap, ChevronDown, RefreshCw, BookOpen, Bookmark, Award } from 'lucide-react';
 import { FAQ_ITEMS } from '../content.ts';
+import { WordplayGlossary } from './WordplayGlossary.tsx';
 
 interface HomeViewProps {
   isDarkMode: boolean;
@@ -247,6 +248,9 @@ export function HomeView({
           </div>
         </div>
       </section>
+
+      {/* Wordplay Glossary and Dictionary Terms */}
+      <WordplayGlossary isDarkMode={isDarkMode} />
 
       {/* FAQs Section */}
       <section className={`mt-20 py-20 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border-y -mx-6 md:-mx-12 px-6 md:px-12`}>

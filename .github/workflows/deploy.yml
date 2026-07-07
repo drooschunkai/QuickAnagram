@@ -1,0 +1,46 @@
+name: Build, Prerender, and Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-prerender:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+        with:
+          # Fetch all history so we can push to a deploy branch if needed
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Build and Prerender
+        run: npm run build
+        env:
+          NODE_ENV: production
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      # Step to deploy the built /dist folder to a dedicated branch (e.g., deploy)
+      # Hostinger Git Integration should be configured to track this branch.
+      - name: Deploy built files to deploy branch
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist
+          branch: deploy # The branch that Hostinger's Git Integration will track
+          token: ${{ secrets.DEPLOY_TOKEN || secrets.GITHUB_TOKEN }}
+          clean: true
+          commit-message: "deploy: pre-rendered static HTML routes [skip ci]"

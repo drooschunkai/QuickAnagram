@@ -9,6 +9,7 @@ import { UnscramblerView } from './components/UnscramblerView.tsx';
 import { AnagramSolverView } from './components/AnagramSolverView.tsx';
 import { CognitiveGame } from './components/CognitiveGame.tsx';
 import { AnagramGame } from './components/AnagramGame.tsx';
+import { FALLBACK_WORDS } from './fallbackWords.ts';
 
 type View = 'home' | 'unscrambler' | 'anagram-solver' | 'blog' | 'about' | 'contact' | 'dictionary' | 'policy' | 'terms' | 'words-az' | 'strategy';
 
@@ -142,7 +143,7 @@ export default function App() {
   const [anagramResults, setAnagramResults] = useState<Record<number, string[]>>({});
   const [anagramIsProcessing, setAnagramIsProcessing] = useState(false);
 
-  const [dictionary, setDictionary] = useState<DictionaryWord[]>([]);
+  const [dictionary, setDictionary] = useState<DictionaryWord[]>(FALLBACK_WORDS);
   const [copiedWord, setCopiedWord] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedDefinition, setSelectedDefinition] = useState<Definition | null>(null);
@@ -1341,6 +1342,68 @@ export default function App() {
                 <textarea className={`w-full p-6 rounded-2xl border ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'} outline-none focus:ring-2 focus:ring-teal-500/50 transition-all`} placeholder="Message" rows={4}></textarea>
                 <button className={`w-full h-14 ${isDarkMode ? 'bg-teal-400 text-slate-950 hover:bg-teal-300' : 'bg-teal-700 text-white hover:bg-teal-800'} font-bold rounded-2xl transition-colors shadow-lg shadow-teal-900/10`}>Send</button>
               </form>
+            </div>
+
+            {/* Frequently Asked Questions Before Contacting & Physical Address Guidelines */}
+            <div className="md:col-span-2 mt-12 pt-12 border-t border-slate-700/20 space-y-12">
+              <div>
+                <h3 className={`text-2xl font-black mb-4 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                  Frequently Asked Questions Before Contacting
+                </h3>
+                <p className={`text-sm mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'} leading-relaxed`}>
+                  Before sending us an email, please review these common questions regarding our word solvers, anagram indexes, and partnership opportunities.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className={`p-6 rounded-2xl border ${isDarkMode ? 'bg-slate-950/40 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                    <h4 className={`font-bold text-sm mb-2 ${isDarkMode ? 'text-teal-400' : 'text-teal-700'}`}>
+                      Can I request custom word list filters?
+                    </h4>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Yes! We are constantly updating our dictionary databases. If you find a word is missing or would like to request new Scrabble / Wordle letter patterns, please contact us with details.
+                    </p>
+                  </div>
+                  <div className={`p-6 rounded-2xl border ${isDarkMode ? 'bg-slate-950/40 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                    <h4 className={`font-bold text-sm mb-2 ${isDarkMode ? 'text-teal-400' : 'text-teal-700'}`}>
+                      Is my user data tracked when I unscramble letters?
+                    </h4>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Absolutely not. All word solving, anagram matching, and letter unscrambling is executed directly on your client browser. We do not store or track any letter combinations you search.
+                    </p>
+                  </div>
+                  <div className={`p-6 rounded-2xl border ${isDarkMode ? 'bg-slate-950/40 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                    <h4 className={`font-bold text-sm mb-2 ${isDarkMode ? 'text-teal-400' : 'text-teal-700'}`}>
+                      How do I submit feedback about definitions?
+                    </h4>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      If you notice any typo or incorrect explanation in our dictionary meanings modal, copy the word and send it to our support email. We process updates weekly.
+                    </p>
+                  </div>
+                  <div className={`p-6 rounded-2xl border ${isDarkMode ? 'bg-slate-950/40 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                    <h4 className={`font-bold text-sm mb-2 ${isDarkMode ? 'text-teal-400' : 'text-teal-700'}`}>
+                      Advertising and Business Inquiries
+                    </h4>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      For header bidding, direct sponsorships, or premium ad placement requests, please mention your ad network name and traffic requirements in your message.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className={`p-6 rounded-2xl border ${isDarkMode ? 'bg-slate-950/20 border-slate-800' : 'bg-slate-50 border-slate-200'} flex flex-col md:flex-row justify-between items-start md:items-center gap-6`}>
+                <div>
+                  <h4 className={`font-bold text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-800'} mb-1`}>
+                    LetterHub Software Group (UnscramblerHub Headquarters)
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    Registered Digital Publisher • Compliance Office Code: LH-992-B
+                  </p>
+                </div>
+                <div className="text-left md:text-right">
+                  <p className="text-xs text-slate-500 font-semibold">100 Main Street, Suite 400</p>
+                  <p className="text-xs text-slate-500">New York, NY 10001, United States</p>
+                  <p className="text-xs text-slate-500">Email: legal@unscramblerhub.com</p>
+                </div>
+              </div>
             </div>
           </div>
         )}
