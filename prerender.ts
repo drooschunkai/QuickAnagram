@@ -73,14 +73,11 @@ async function main() {
 
         const page = await context.newPage();
         
-        // Go to page and wait until DOM is loaded and network is quiet to guarantee hydration
+        // Go to page and wait until network is idle to guarantee React hydration/rendering is complete
         await page.goto(pageUrl, {
-          waitUntil: 'domcontentloaded',
+          waitUntil: 'networkidle',
           timeout: 30000
         });
-
-        // Wait a small timeout to allow React hydration/rendering to complete
-        await page.waitForTimeout(600);
 
         // Extract fully-rendered DOM HTML
         let html = await page.content();
