@@ -1,6 +1,6 @@
 export const ABOUT_CONTENT = {
-  mission: "At LetterHub, our mission is to provide the fastest, cleanest, and most reliable word tools on the web. We believe that technology should empower creativity and learning, not get in the way.",
-  history: "LetterHub started as a small personal project to solve a 'vowel dump' issue in a family game night. It has since evolved into a high-performance web app used by thousands of competitive players globally.",
+  mission: "At UnscramblerHub, our mission is to provide the fastest, cleanest, and most reliable word tools on the web. We believe that technology should empower creativity and learning, not get in the way.",
+  history: "UnscramblerHub started as a small personal project to solve a 'vowel dump' issue in a family game night. It has since evolved into a high-performance web app used by thousands of competitive players globally.",
   values: ["Performance First", "Minimalist Design", "Dictionary Accuracy", "Privacy Focused"]
 };
 
@@ -10,7 +10,7 @@ export const POLICY_CONTENT = {
   sections: [
     {
       title: "1. Brand Identity & Flagship Operations",
-      content: "UnscramblerHub is the flagship web application engine operating under the official LetterHub software suite. Our services, databases, and word-game tutorials are located exclusively at our primary master apex domain: https://unscramblerhub.com. All operations, licensing, and database queries are unified under this flagship to satisfy manual compliance audits and indexation rules."
+      content: "UnscramblerHub is the premier web application engine for word games, puzzles, and letter unscrambling. Our services, databases, and word-game tutorials are located exclusively at our primary master apex domain: https://unscramblerhub.com. All operations, licensing, and database queries are unified under this flagship to satisfy manual compliance audits and indexation rules."
     },
     {
       title: "2. Client-Side Processing & Absolute Local Privacy",
@@ -53,7 +53,7 @@ export const TERMS_CONTENT = {
   sections: [
     {
       title: "Fair Usage",
-      content: "LetterHub is provided free of charge for personal use. While we encourage using our tools for training and learning, we advise users to follow the specific rules of any competitive game they are participating in."
+      content: "UnscramblerHub is provided free of charge for personal use. While we encourage using our tools for training and learning, we advise users to follow the specific rules of any competitive game they are participating in."
     },
     {
       title: "Dictionary Disclaimer",
@@ -82,7 +82,7 @@ export const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: "Is this word solver fully safe, secure, and free to use?",
-    answer: "Yes, UnscramblerHub is 100% free of charge and does not require registration, email sign-ups, or subscriptions. Under our unified LetterHub software suite branding, we believe that web applications should respect user privacy. That is why our word-game engines are designed using a decentralized, client-side processing model. All anagram permutations and character matches are calculated locally in your browser sandbox. Your input letters and searches are never transmitted to any external server or recorded in any database. To maintain this high-performance, private infrastructure without charging our users, we display programmatic advertising served by Google AdSense, which uses secure third-party cookies."
+    answer: "Yes, UnscramblerHub is 100% free of charge and does not require registration, email sign-ups, or subscriptions. We believe that web applications should respect user privacy. That is why our word-game engines are designed using a decentralized, client-side processing model. All anagram permutations and character matches are calculated locally in your browser sandbox. Your input letters and searches are never transmitted to any external server or recorded in any database. To maintain this high-performance, private infrastructure without charging our users, we display programmatic advertising served by Google AdSense, which uses secure third-party cookies."
   },
   {
     question: "Which official dictionary databases and lexicons are integrated?",

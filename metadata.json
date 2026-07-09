@@ -1,6 +1,6 @@
 {
-  "name": "LetterHub",
-  "description": "UnscramblerHub is the flagship word-game engine of the LetterHub software suite, dedicated to providing lightning-fast, client-side word unscrambling and anagram solver utilities.",
+  "name": "UnscramblerHub",
+  "description": "UnscramblerHub is the premier word-game engine, dedicated to providing lightning-fast, client-side word unscrambling and anagram solver utilities.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

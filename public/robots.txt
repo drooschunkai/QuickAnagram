@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /words-az?*
+Disallow: /dictionary?*
 
 Sitemap: https://unscramblerhub.com/sitemap.xml

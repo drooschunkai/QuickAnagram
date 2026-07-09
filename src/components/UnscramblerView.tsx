@@ -30,6 +30,7 @@ interface UnscramblerViewProps {
   sharedWord: string | null;
   copyToClipboard: (word: string) => void;
   copiedWord: string | null;
+  navigateTo: (view: any, slug?: string, initialInput?: string) => void;
 }
 
 export function UnscramblerView({
@@ -60,6 +61,7 @@ export function UnscramblerView({
   sharedWord,
   copyToClipboard,
   copiedWord,
+  navigateTo,
 }: UnscramblerViewProps) {
   return (
     <div className="space-y-12">
@@ -499,12 +501,64 @@ export function UnscramblerView({
         </div>
       </section>
 
+      {/* Featured Strategic Guides (Internal Linking & Crawlability) */}
+      <section className={`pt-12 border-t ${isDarkMode ? 'border-slate-800' : 'border-slate-100'} max-w-4xl mx-auto px-4`}>
+        <div className="space-y-6">
+          <div className="space-y-1">
+            <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+              Recommended Strategy Guides & Word Science
+            </h3>
+            <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+              Level up your board matches with master-class guides written by word-game veterans.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div 
+              onClick={() => navigateTo('blog', 'mathematics-of-rack-balance')}
+              className={`p-5 rounded-xl border cursor-pointer transition-all hover:translate-x-1 ${
+                isDarkMode ? 'bg-slate-900/60 border-slate-800 hover:border-teal-500/30' : 'bg-[#fafafa] border-slate-200 hover:border-teal-400'
+              } flex flex-col justify-between`}
+            >
+              <div className="space-y-2">
+                <span className="text-[9px] font-black uppercase tracking-wider text-teal-500">Advanced Strategy</span>
+                <h4 className={`font-bold text-sm ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                  The Mathematics of Rack Balance
+                </h4>
+                <p className="text-xs text-slate-500 line-clamp-2">
+                  Vowel-to-consonant ratios, duplicate tile penalties, and the exact probability curves behind pulling high-scoring combos.
+                </p>
+              </div>
+              <span className="text-xs font-semibold text-teal-500 mt-2 block">Read full guide &rarr;</span>
+            </div>
+
+            <div 
+              onClick={() => navigateTo('blog', 'etymological-roots-word-games')}
+              className={`p-5 rounded-xl border cursor-pointer transition-all hover:translate-x-1 ${
+                isDarkMode ? 'bg-slate-900/60 border-slate-800 hover:border-teal-500/30' : 'bg-[#fafafa] border-slate-200 hover:border-teal-400'
+              } flex flex-col justify-between`}
+            >
+              <div className="space-y-2">
+                <span className="text-[9px] font-black uppercase tracking-wider text-teal-500">Etymology</span>
+                <h4 className={`font-bold text-sm ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                  Etymological Roots in Competitive Word Games
+                </h4>
+                <p className="text-xs text-slate-500 line-clamp-2">
+                  Why Greco-Latin stems and historical sound shifts hold the key to reconstructing unknown tiles on premium boards.
+                </p>
+              </div>
+              <span className="text-xs font-semibold text-teal-500 mt-2 block">Read full guide &rarr;</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* FAQs Section */}
       <section className={`mt-20 py-20 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border-y -mx-6 md:-mx-12 px-6 md:px-12`}>
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <h2 className={`text-3xl md:text-4xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-4`}>Frequently Asked Questions</h2>
-            <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Everything you need to know about LetterHub and word unscrambling.</p>
+            <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Everything you need to know about UnscramblerHub and word unscrambling.</p>
           </div>
           
           <div className="space-y-4">

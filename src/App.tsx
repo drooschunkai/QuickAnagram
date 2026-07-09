@@ -391,6 +391,25 @@ export default function App() {
     canonicalLink.setAttribute('href', canonicalUrl);
   }, [view, selectedPost]);
 
+  // Dynamic robots meta tag management to block search indexing for Words A-Z and Dictionary views
+  useEffect(() => {
+    const isNoIndexView = view === 'words-az' || view === 'dictionary';
+    let robotsMeta = document.querySelector('meta[name="robots"]');
+
+    if (isNoIndexView) {
+      if (!robotsMeta) {
+        robotsMeta = document.createElement('meta');
+        robotsMeta.setAttribute('name', 'robots');
+        document.head.appendChild(robotsMeta);
+      }
+      robotsMeta.setAttribute('content', 'noindex, follow');
+    } else {
+      if (robotsMeta) {
+        robotsMeta.remove();
+      }
+    }
+  }, [view]);
+
   // Reset pagination on filter adjustments
   useEffect(() => {
     setAzPage(1);
@@ -586,8 +605,8 @@ export default function App() {
 
   const shareWord = async (word: string) => {
     const shareData = {
-      title: `LetterHub - ${word}`,
-      text: `Found the word "${word.toUpperCase()}" using LetterHub! Check it out:`,
+      title: `UnscramblerHub - ${word}`,
+      text: `Found the word "${word.toUpperCase()}" using UnscramblerHub! Check it out:`,
       url: window.location.href,
     };
 
@@ -599,7 +618,7 @@ export default function App() {
       }
     } else {
       // Fallback: Copy unique share link
-      navigator.clipboard.writeText(`Check out "${word.toUpperCase()}" on LetterHub: ${window.location.href}`);
+      navigator.clipboard.writeText(`Check out "${word.toUpperCase()}" on UnscramblerHub: ${window.location.href}`);
       setSharedWord(word);
       setTimeout(() => setSharedWord(null), 2000);
     }
@@ -617,9 +636,9 @@ export default function App() {
       <nav className={`px-6 md:px-12 py-6 flex flex-col border-b ${isDarkMode ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-white/50'} backdrop-blur-md sticky top-0 z-50`}>
         <div className="flex justify-between items-center w-full">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
-            <img src="/logo.svg" alt="LetterHub Logo" className={`w-10 h-10 rounded-xl shadow-lg ${isDarkMode ? 'shadow-teal-900/20' : 'shadow-teal-100'} object-contain bg-white p-1`} referrerPolicy="no-referrer" />
+            <img src="/logo.svg" alt="UnscramblerHub Logo" className={`w-10 h-10 rounded-xl shadow-lg ${isDarkMode ? 'shadow-teal-900/20' : 'shadow-teal-100'} object-contain bg-white p-1`} referrerPolicy="no-referrer" />
             <div>
-              <span className={`text-xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'} block leading-tight`}>LetterHub</span>
+              <span className={`text-xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'} block leading-tight`}>UnscramblerHub</span>
               <span className={`text-[10px] uppercase tracking-widest ${isDarkMode ? 'text-teal-400' : 'text-teal-600'} font-bold`}>Ultimate Word Engine</span>
             </div>
           </div>
@@ -634,7 +653,9 @@ export default function App() {
               <button onClick={() => navigateTo('strategy')} className={`${view === 'strategy' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'strategy' ? '' : 'border-transparent'}`}>Strategy Guide</button>
               <button onClick={() => navigateTo('about')} className={`${view === 'about' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'about' ? '' : 'border-transparent'}`}>About</button>
             </div>
-            
+          </div>
+
+          <div className="flex items-center gap-3">
             {/* Language Selector */}
             <div className="relative">
               <button
@@ -658,7 +679,7 @@ export default function App() {
               <AnimatePresence>
                 {isLangDropdownOpen && (
                   <>
-                    <div className="fixed inset-0 z-40" onClick={() => setIsLangDropdownOpen(false)} />
+                    <div className="fixed inset-0 z-45" onClick={() => setIsLangDropdownOpen(false)} />
                     <motion.div 
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -706,87 +727,13 @@ export default function App() {
             >
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
-          </div>
 
-          {/* Mobile Buttons */}
-          <div className="flex md:hidden items-center gap-2">
-            {/* Mobile Language Selector */}
-            <div className="relative">
-              <button
-                onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl transition-all text-sm font-semibold border ${
-                  isDarkMode 
-                    ? 'bg-slate-800 border-slate-700 text-slate-200' 
-                    : 'bg-slate-100 border-slate-200 text-slate-705'
-                }`}
-                aria-label="Select Language"
-              >
-                {isDictLoading ? (
-                  <Loader2 className="animate-spin text-teal-500" size={14} />
-                ) : (
-                  <span className="text-base leading-none">{currentLangObj.flag}</span>
-                )}
-                <span className="uppercase font-bold text-xs">{currentLangObj.code}</span>
-                <ChevronDown size={12} className={`transition-transform duration-200 ${isLangDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              <AnimatePresence>
-                {isLangDropdownOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setIsLangDropdownOpen(false)} />
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className={`absolute right-0 mt-2 w-44 rounded-2xl border shadow-xl z-50 overflow-hidden ${
-                        isDarkMode 
-                          ? 'bg-slate-900 border-slate-800 text-slate-200' 
-                          : 'bg-white border-slate-150 text-slate-805'
-                      }`}
-                    >
-                      <div className="p-1 space-y-0.5">
-                        {LANGUAGES.map((lang) => (
-                          <button
-                            key={lang.code}
-                            onClick={() => {
-                              setCurrentLanguage(lang.code);
-                              setIsLangDropdownOpen(false);
-                            }}
-                            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-xs font-semibold transition-colors ${
-                              currentLanguage === lang.code
-                                ? (isDarkMode ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-50 text-teal-700')
-                                : (isDarkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-slate-50 text-slate-650')
-                            }`}
-                          >
-                            <div className="flex items-center gap-1.5">
-                              <span>{lang.flag}</span>
-                              <span>{lang.nativeName}</span>
-                            </div>
-                            <span className="text-[10px] uppercase font-bold opacity-60">
-                              {lang.countryCode}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <button 
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`p-2 rounded-xl transition-all ${isDarkMode ? 'bg-slate-800 text-teal-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-              aria-label="Toggle dark mode"
-            >
-              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className={`p-2 rounded-xl transition-all ${isDarkMode ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-800 hover:bg-slate-200'}`}
+              className={`md:hidden p-2 rounded-xl transition-all ${isDarkMode ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-800 hover:bg-slate-200'}`}
               aria-label="Toggle navigation menu"
             >
-              {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+              {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
@@ -857,6 +804,7 @@ export default function App() {
             sharedWord={sharedWord}
             copyToClipboard={copyToClipboard}
             copiedWord={copiedWord}
+            navigateTo={navigateTo}
           />
         )}
 
@@ -879,6 +827,7 @@ export default function App() {
             sharedWord={sharedWord}
             copyToClipboard={copyToClipboard}
             copiedWord={copiedWord}
+            navigateTo={navigateTo}
           />
         )}
 
@@ -1145,7 +1094,7 @@ export default function App() {
             {!selectedPost ? (
               <div className="py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="text-center mb-12 max-w-2xl mx-auto">
-                  <h1 className={`text-5xl md:text-6xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-6`}>LetterHub Blog</h1>
+                  <h1 className={`text-5xl md:text-6xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-6`}>UnscramblerHub Blog</h1>
                   <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'} text-lg`}>Insights, strategies, and the curious history of the English language. Optimized for word game mastery.</p>
                 </div>
 
@@ -1246,7 +1195,7 @@ export default function App() {
 
             <div className={`prose max-w-none ${isDarkMode ? 'text-slate-300' : 'text-slate-700'} mb-12 space-y-6 text-base md:text-lg`}>
               <p className="leading-relaxed">
-                UnscramblerHub was founded by a passionate team of wordsmiths, board game enthusiasts, and puzzle lovers who understand both the joy of a perfect word play and the deep frustration of hitting a mental block. Whether you are locked in a high-stakes family battle of Scrabble, trying to preserve your daily streak on Wordle, deciphering a complex crossword puzzle, or tackling a classic anagram jumble, we built this platform to ensure you never stay stuck for long.
+                UnscramblerHub was founded in late 2024 by Liam, a software developer and word-game enthusiast, initially to solve a "vowel dump" issue during a family Scrabble night. He wanted to build an extremely fast, clean, and responsive tool that doesn't suffer from the sluggish loading speeds and heavy ad-clutter of traditional word solver websites. Today, UnscramblerHub is a high-performance, responsive platform designed for word game players globally. Whether you are locked in a high-stakes family battle of Scrabble, trying to preserve your daily streak on Wordle, deciphering a complex crossword puzzle, or tackling a classic anagram jumble, UnscramblerHub ensures you never stay stuck for long.
               </p>
 
               <h2 className={`text-2xl font-bold mt-10 mb-4 ${isDarkMode ? 'text-slate-105' : 'text-slate-800'}`}>
@@ -1392,10 +1341,10 @@ export default function App() {
               <div className={`p-6 rounded-2xl border ${isDarkMode ? 'bg-slate-950/20 border-slate-800' : 'bg-slate-50 border-slate-200'} flex flex-col md:flex-row justify-between items-start md:items-center gap-6`}>
                 <div>
                   <h4 className={`font-bold text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-800'} mb-1`}>
-                    LetterHub Software Group (UnscramblerHub Headquarters)
+                    UnscramblerHub Software Group (UnscramblerHub Headquarters)
                   </h4>
                   <p className="text-xs text-slate-500">
-                    Registered Digital Publisher • Compliance Office Code: LH-992-B
+                    Registered Digital Publisher • Compliance Office Code: UH-992-B
                   </p>
                 </div>
                 <div className="text-left md:text-right">
@@ -1437,7 +1386,7 @@ export default function App() {
             <p className="text-slate-500 mb-8">Last Updated: June 29, 2026</p>
 
             <div className={`p-6 rounded-2xl mb-10 border ${isDarkMode ? 'bg-slate-950/50 border-teal-500/20 text-teal-400' : 'bg-teal-50/50 border-teal-700/20 text-teal-900'} text-base md:text-lg leading-relaxed`}>
-              <strong>By using the word tools, unscrambling engines, and dictionary search forms at UnscramblerHub—the flagship web application of the LetterHub software suite—you fully agree to these simple Terms of Service, Acceptable Use rules, and Third-Party Intellectual Property Disclaimers.</strong>
+              <strong>By using the word tools, unscrambling engines, and dictionary search forms at UnscramblerHub, you fully agree to these simple Terms of Service, Acceptable Use rules, and Third-Party Intellectual Property Disclaimers.</strong>
             </div>
 
             <div className={`prose max-w-none ${isDarkMode ? 'text-slate-300' : 'text-slate-700'} space-y-8 text-base md:text-lg`}>
@@ -1459,7 +1408,7 @@ export default function App() {
                   To keep things clear for our visitors and search networks, we declare that our site is completely independent of all official game brands:
                 </p>
                 <div className={`p-6 rounded-xl border ${isDarkMode ? 'bg-slate-900 border-red-500/10 text-slate-300' : 'bg-red-50/30 border-red-200 text-slate-700'} text-sm leading-relaxed mb-6`}>
-                  <strong>TRADEMARK NOTICE:</strong> UnscramblerHub and LetterHub are completely independent digital properties. We are NOT affiliated, associated, authorized, endorsed by, or in any way officially connected with Mattel, Hasbro, Scrabble, Words with Friends, Zynga, or The New York Times (Wordle). All trademarks and registered logos are the property of their respective owners, and our educational word solver is offered strictly under fair-use guidelines.
+                  <strong>TRADEMARK NOTICE:</strong> UnscramblerHub is a completely independent digital property. We are NOT affiliated, associated, authorized, endorsed by, or in any way officially connected with Mattel, Hasbro, Scrabble, Words with Friends, Zynga, or The New York Times (Wordle). All trademarks and registered logos are the property of their respective owners, and our educational word solver is offered strictly under fair-use guidelines.
                 </div>
               </section>
 
@@ -2008,8 +1957,8 @@ export default function App() {
         <div className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-4 gap-12">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <img src="/logo.svg" alt="LetterHub" className="w-6 h-6 rounded object-contain bg-white p-0.5" referrerPolicy="no-referrer" />
-              <h4 className="text-white font-bold">LetterHub</h4>
+              <img src="/logo.svg" alt="UnscramblerHub" className="w-6 h-6 rounded object-contain bg-white p-0.5" referrerPolicy="no-referrer" />
+              <h4 className="text-white font-bold">UnscramblerHub</h4>
             </div>
             <p className="text-xs">World's fastest word extraction tool.</p>
           </div>
@@ -2026,7 +1975,7 @@ export default function App() {
         </div>
         <div className="max-w-7xl mx-auto w-full pt-12 mt-12 border-t border-slate-800/50">
           <p className="text-[10px] uppercase tracking-widest text-slate-500 font-black mb-4">
-             © 2024 LetterHub • All Rights Reserved
+             © 2024-2026 UnscramblerHub • All Rights Reserved
           </p>
           <p className="text-[11px] text-slate-500 dark:text-slate-600 normal-case font-normal leading-relaxed max-w-5xl">
             <strong>Legal Disclaimer:</strong> UnscramblerHub.com is an independent word-game utility and educational resource. UnscramblerHub is not affiliated with, authorized, maintained, sponsored, or endorsed by Hasbro Inc. (owners of Scrabble®), Mattel Inc., The New York Times Company (owners of Wordle®), or any of their respective affiliates, subsidiaries, or licensors. All trademarks, logos, and copyrights relating to these games are the sole property of their respective owners. This tool is intended strictly for educational and informational purposes.

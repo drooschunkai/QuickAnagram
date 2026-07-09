@@ -252,6 +252,87 @@ export function HomeView({
       {/* Wordplay Glossary and Dictionary Terms */}
       <WordplayGlossary isDarkMode={isDarkMode} />
 
+      {/* Featured Strategic Guides (Internal Linking & Crawlability) */}
+      <section className={`pt-16 border-t ${isDarkMode ? 'border-slate-800' : 'border-slate-100'} max-w-4xl mx-auto px-4`}>
+        <div className="space-y-8">
+          <div className="text-center md:text-left space-y-2">
+            <h2 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+              Featured Strategic Guides & Linguistic Insights
+            </h2>
+            <p className={`text-sm md:text-base ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+              Expand your vocabulary, master tile probability, and learn the science behind elite wordplay.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div 
+              onClick={() => navigateTo('blog', 'evolution-of-competitive-scrabble')}
+              className={`p-6 rounded-2xl border cursor-pointer transition-all hover:-translate-y-1 ${
+                isDarkMode ? 'bg-slate-900 border-slate-800 hover:border-teal-500/30 hover:bg-slate-900/80' : 'bg-white border-slate-200 hover:border-teal-400 hover:shadow-lg'
+              } flex flex-col justify-between h-full`}
+            >
+              <div className="space-y-3">
+                <span className="text-[10px] font-black uppercase tracking-widest text-teal-500">Mind Sports History</span>
+                <h3 className={`font-black text-base ${isDarkMode ? 'text-slate-200' : 'text-slate-800'} leading-snug`}>
+                  The Evolution of Competitive Scrabble
+                </h3>
+                <p className="text-xs text-slate-500 line-clamp-3">
+                  From Alfred Butts' Great Depression prototype to computer-optimized professional championships, trace the history of the world's favorite word sport.
+                </p>
+              </div>
+              <span className="text-xs font-bold text-teal-500 mt-4 inline-flex items-center gap-1">Read Article &rarr;</span>
+            </div>
+
+            <div 
+              onClick={() => navigateTo('blog', 'linguistics-of-letter-blends')}
+              className={`p-6 rounded-2xl border cursor-pointer transition-all hover:-translate-y-1 ${
+                isDarkMode ? 'bg-slate-900 border-slate-800 hover:border-teal-500/30 hover:bg-slate-900/80' : 'bg-white border-slate-200 hover:border-teal-400 hover:shadow-lg'
+              } flex flex-col justify-between h-full`}
+            >
+              <div className="space-y-3">
+                <span className="text-[10px] font-black uppercase tracking-widest text-teal-500">Cognitive Linguistics</span>
+                <h3 className={`font-black text-base ${isDarkMode ? 'text-slate-200' : 'text-slate-800'} leading-snug`}>
+                  The Linguistics of Letter Blends
+                </h3>
+                <p className="text-xs text-slate-500 line-clamp-3">
+                  Discover how graphotactics, phonetic syllable boundaries, and cognitive 'chunking' govern why our brains struggle with specific scrambled letter clusters.
+                </p>
+              </div>
+              <span className="text-xs font-bold text-teal-500 mt-4 inline-flex items-center gap-1">Read Article &rarr;</span>
+            </div>
+
+            <div 
+              onClick={() => navigateTo('blog', 'mathematics-of-rack-balance')}
+              className={`p-6 rounded-2xl border cursor-pointer transition-all hover:-translate-y-1 ${
+                isDarkMode ? 'bg-slate-900 border-slate-800 hover:border-teal-500/30 hover:bg-slate-900/80' : 'bg-white border-slate-200 hover:border-teal-400 hover:shadow-lg'
+              } flex flex-col justify-between h-full`}
+            >
+              <div className="space-y-3">
+                <span className="text-[10px] font-black uppercase tracking-widest text-teal-500">Advanced Strategy</span>
+                <h3 className={`font-black text-base ${isDarkMode ? 'text-slate-200' : 'text-slate-800'} leading-snug`}>
+                  The Mathematics of Rack Balance
+                </h3>
+                <p className="text-xs text-slate-500 line-clamp-3">
+                  Learn how probability models, rack leaves, vowel-to-consonant ratios, and duplicate-letter penalties can double your average Scrabble or tournament scores.
+                </p>
+              </div>
+              <span className="text-xs font-bold text-teal-500 mt-4 inline-flex items-center gap-1">Read Article &rarr;</span>
+            </div>
+          </div>
+          
+          <div className="flex justify-center pt-2">
+            <button 
+              onClick={() => navigateTo('blog')}
+              className={`px-6 py-3 rounded-xl text-xs font-black transition-all ${
+                isDarkMode ? 'bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 text-teal-400' : 'bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 text-teal-700'
+              }`}
+            >
+              Browse All Strategic Articles &rarr;
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* FAQs Section */}
       <section className={`mt-20 py-20 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border-y -mx-6 md:-mx-12 px-6 md:px-12`}>
         <div className="max-w-4xl mx-auto">

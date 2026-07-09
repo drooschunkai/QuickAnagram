@@ -82,6 +82,13 @@ async function main() {
         // Extract fully-rendered DOM HTML
         let html = await page.content();
 
+        // Backup safety layer: ensure words-az and dictionary routes explicitly have the noindex tag
+        if (route === '/words-az' || route === '/dictionary') {
+          if (!html.includes('name="robots"') && !html.includes("name='robots'")) {
+            html = html.replace('<head>', '<head>\n    <meta name="robots" content="noindex, follow">');
+          }
+        }
+
         // Target output file path
         let targetFilePath: string;
         if (route === '/') {
