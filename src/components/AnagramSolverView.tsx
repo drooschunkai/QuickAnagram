@@ -1,5 +1,30 @@
 import { Zap, Loader2, Book, Share2, Copy, Check, ChevronDown } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { FAQ_ITEMS } from '../content.ts';
+
+const gridContainerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.02,
+    }
+  }
+};
+
+const wordItemVariants = {
+  hidden: { opacity: 0, y: 12, scale: 0.98 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 120,
+      damping: 14
+    }
+  }
+};
 
 interface AnagramSolverViewProps {
   isDarkMode: boolean;
@@ -122,9 +147,19 @@ export function AnagramSolverView({
                     </h3>
                     <span className={`text-xs font-bold ${isDarkMode ? 'text-teal-400 bg-teal-900/40' : 'text-teal-600 bg-teal-50'} px-3 py-1 rounded-full`}>{results[len].length}</span>
                   </div>
-                  <div className="space-y-2">
+                  <motion.div
+                    key={`${len}-${results[len].join(',')}`}
+                    variants={gridContainerVariants}
+                    initial="hidden"
+                    animate="visible"
+                    className="space-y-2"
+                  >
                     {results[len].map((word) => (
-                      <div key={word} className={`group relative flex justify-between items-center p-4 ${isDarkMode ? 'bg-slate-900 border-slate-800 hover:border-teal-500/50' : 'bg-white border-slate-200 hover:border-teal-300'} border rounded-2xl transition-all shadow-sm`}>
+                      <motion.div
+                        key={word}
+                        variants={wordItemVariants}
+                        className={`group relative flex justify-between items-center p-4 ${isDarkMode ? 'bg-slate-900 border-slate-800 hover:border-teal-500/50' : 'bg-white border-slate-200 hover:border-teal-300'} border rounded-2xl transition-all shadow-sm`}
+                      >
                         <span className={`font-mono font-bold uppercase ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{word}</span>
                         <div className="flex gap-1">
                           <button onClick={() => fetchDefinition(word)} title="Define" className={`p-2 rounded-lg ${isDarkMode ? 'hover:bg-teal-400/10 text-slate-400 hover:text-teal-400' : 'hover:bg-teal-500/10 text-slate-400 hover:text-teal-600'} transition-colors cursor-pointer`}>
@@ -137,9 +172,9 @@ export function AnagramSolverView({
                             {copiedWord === word ? <Check size={14} className="text-teal-500" /> : <Copy size={14} />}
                           </button>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
-                  </div>
+                  </motion.div>
                 </div>
               ))}
             </div>
