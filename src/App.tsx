@@ -334,7 +334,19 @@ export default function App() {
 
   // Path-based routing handler that extracts the route view and blog post slug
   const handleRouting = useCallback(() => {
-    const path = window.location.pathname;
+    let path = window.location.pathname;
+    let hadTrailingSlash = false;
+    // Strip trailing slash for consistent route matching (except for the root path "/")
+    if (path.length > 1 && path.endsWith('/')) {
+      path = path.slice(0, -1);
+      hadTrailingSlash = true;
+    }
+
+    // Sync browser URL to match normalized path (e.g. /words-az/ -> /words-az) without reloading
+    if (hadTrailingSlash) {
+      window.history.replaceState(null, '', path);
+    }
+
     if (path.startsWith('/blog/')) {
       const slug = path.split('/')[2] || '';
       const post = BLOG_POSTS.find(p => p.id === slug);
@@ -346,7 +358,7 @@ export default function App() {
         setSelectedPost(null);
       }
     } else {
-      const cleanPath = path.replace('/', '') as View;
+      const cleanPath = path.substring(1) as View;
       const matchedView: View = ['home', 'unscrambler', 'anagram-solver', 'blog', 'about', 'contact', 'dictionary', 'policy', 'terms', 'words-az', 'strategy'].includes(cleanPath)
         ? cleanPath
         : (path === '/' ? 'home' : 'home'); // Default fallback to home
