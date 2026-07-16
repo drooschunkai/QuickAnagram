@@ -101,7 +101,41 @@ Unlike anagrams, which require rearranging all letters to form a *new* word, pal
 13. Stats
 14. Tenet
 15. Wow
-... (and more)
+16. Pop
+17. Dad
+18. Eye
+19. Pip
+20. Bib
+21. Did
+22. Gag
+23. Gig
+24. Peep
+25. Deed
+26. Sees
+27. Toot
+28. Nun
+29. Dud
+30. Boob
+31. Poop
+32. Redder
+33. Repaper
+34. Sexes
+35. Kook
+36. Minim
+37. Deified
+38. Reviver
+39. Rotor
+40. Tot
+41. Pup
+42. Ewe
+43. Aha
+44. Ana
+45. Naan
+46. Shahs
+47. Terret
+48. Alula
+49. Malayalam
+50. Reifier
 
 ## Sentence Palindromes
 "A man, a plan, a canal, Panama!" is perhaps the most famous sentence-length palindrome in the English language. It perfectly ignores spacing and punctuation to maintain its perfect symmetry.
@@ -113,6 +147,9 @@ Interestingly, the unofficial term for a fear of palindromes is 'Aibohphobia'. T
 
 ## Palindrome vs Anagram
 The key distinction is that every palindrome is technically its own anagram, but very few anagrams are palindromes. A palindrome is a subset of the anagram family that achieves the rare feat of perfect reflection.
+
+## Beyond Words: Numeric and Date Palindromes
+Palindromes aren't limited to letters. Numbers can be palindromic too — 121, 3553, and 12321 all read the same forwards and backwards. Calendar dates create some of the most celebrated numeric palindromes: December 2, 2021 (12/2/2021) was widely noted as a palindrome date, and dates like 02/02/2020 drew similar attention worldwide. Mathematicians have long been fascinated by palindromic numbers, particularly palindromic primes — prime numbers that are also palindromes, such as 101, 131, and 757. Some of the most famous palindromic sentences in literature and pop culture, beyond 'A man, a plan, a canal, Panama,' include 'Never odd or even' and 'Was it a car or a cat I saw?' — both frequently cited as prime examples of English wordplay at its most symmetrical.
 `
   },
   {
