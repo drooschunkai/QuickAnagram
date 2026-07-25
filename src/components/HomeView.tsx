@@ -265,11 +265,12 @@ export function HomeView({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div 
-              onClick={() => navigateTo('blog', 'evolution-of-competitive-scrabble')}
+            <a 
+              href="/blog/evolution-of-competitive-scrabble"
+              onClick={(e) => { e.preventDefault(); navigateTo('blog', 'evolution-of-competitive-scrabble'); }}
               className={`p-6 rounded-2xl border cursor-pointer transition-all hover:-translate-y-1 ${
                 isDarkMode ? 'bg-slate-900 border-slate-800 hover:border-teal-500/30 hover:bg-slate-900/80' : 'bg-white border-slate-200 hover:border-teal-400 hover:shadow-lg'
-              } flex flex-col justify-between h-full`}
+              } flex flex-col justify-between h-full block`}
             >
               <div className="space-y-3">
                 <span className="text-[10px] font-black uppercase tracking-widest text-teal-500">Mind Sports History</span>
@@ -281,13 +282,14 @@ export function HomeView({
                 </p>
               </div>
               <span className="text-xs font-bold text-teal-500 mt-4 inline-flex items-center gap-1">Read Article &rarr;</span>
-            </div>
+            </a>
 
-            <div 
-              onClick={() => navigateTo('blog', 'linguistics-of-letter-blends')}
+            <a 
+              href="/blog/linguistics-of-letter-blends"
+              onClick={(e) => { e.preventDefault(); navigateTo('blog', 'linguistics-of-letter-blends'); }}
               className={`p-6 rounded-2xl border cursor-pointer transition-all hover:-translate-y-1 ${
                 isDarkMode ? 'bg-slate-900 border-slate-800 hover:border-teal-500/30 hover:bg-slate-900/80' : 'bg-white border-slate-200 hover:border-teal-400 hover:shadow-lg'
-              } flex flex-col justify-between h-full`}
+              } flex flex-col justify-between h-full block`}
             >
               <div className="space-y-3">
                 <span className="text-[10px] font-black uppercase tracking-widest text-teal-500">Cognitive Linguistics</span>
@@ -299,13 +301,14 @@ export function HomeView({
                 </p>
               </div>
               <span className="text-xs font-bold text-teal-500 mt-4 inline-flex items-center gap-1">Read Article &rarr;</span>
-            </div>
+            </a>
 
-            <div 
-              onClick={() => navigateTo('blog', 'mathematics-of-rack-balance')}
+            <a 
+              href="/blog/mathematics-of-rack-balance"
+              onClick={(e) => { e.preventDefault(); navigateTo('blog', 'mathematics-of-rack-balance'); }}
               className={`p-6 rounded-2xl border cursor-pointer transition-all hover:-translate-y-1 ${
                 isDarkMode ? 'bg-slate-900 border-slate-800 hover:border-teal-500/30 hover:bg-slate-900/80' : 'bg-white border-slate-200 hover:border-teal-400 hover:shadow-lg'
-              } flex flex-col justify-between h-full`}
+              } flex flex-col justify-between h-full block`}
             >
               <div className="space-y-3">
                 <span className="text-[10px] font-black uppercase tracking-widest text-teal-500">Advanced Strategy</span>
@@ -317,18 +320,19 @@ export function HomeView({
                 </p>
               </div>
               <span className="text-xs font-bold text-teal-500 mt-4 inline-flex items-center gap-1">Read Article &rarr;</span>
-            </div>
+            </a>
           </div>
           
           <div className="flex justify-center pt-2">
-            <button 
-              onClick={() => navigateTo('blog')}
-              className={`px-6 py-3 rounded-xl text-xs font-black transition-all ${
+            <a 
+              href="/blog"
+              onClick={(e) => { e.preventDefault(); navigateTo('blog'); }}
+              className={`px-6 py-3 rounded-xl text-xs font-black transition-all inline-block ${
                 isDarkMode ? 'bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 text-teal-400' : 'bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 text-teal-700'
               }`}
             >
               Browse All Strategic Articles &rarr;
-            </button>
+            </a>
           </div>
         </div>
       </section>

@@ -15,13 +15,14 @@ export const BlogLayout = ({ post, onBack, onNavigateToTool, isDarkMode }: BlogL
   return (
     <article className="max-w-4xl mx-auto w-full py-12 px-2 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="mb-12">
-        <button 
-          onClick={onBack} 
+        <a 
+          href="/blog"
+          onClick={(e) => { e.preventDefault(); onBack(); }} 
           className={`flex items-center gap-2 ${isDarkMode ? 'text-teal-400 hover:text-teal-300' : 'text-teal-600 hover:text-teal-500'} font-bold mb-8 transition-colors group`}
         >
           <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> 
           Back to Blog
-        </button>
+        </a>
         
         <div className={`flex items-center gap-3 ${isDarkMode ? 'text-teal-400' : 'text-teal-600'} font-black uppercase text-[10px] tracking-widest mb-4`}>
           <span className={`px-2 py-1 rounded bg-teal-500/10`}>{post.category}</span>
@@ -100,12 +101,13 @@ export const BlogLayout = ({ post, onBack, onNavigateToTool, isDarkMode }: BlogL
                     <h4 className={`text-xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Stuck on a tough board?</h4>
                     <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'} text-sm mb-0`}>Use our lightning-fast Word Unscrambler to find your next winning move in seconds.</p>
                   </div>
-                  <button 
-                    onClick={() => onNavigateToTool('unscramble')}
-                    className="px-8 py-4 bg-teal-600 text-white font-black rounded-2xl hover:bg-teal-500 transition-all shadow-lg shadow-teal-600/20 whitespace-nowrap active:scale-95"
+                  <a 
+                    href="/unscrambler"
+                    onClick={(e) => { e.preventDefault(); onNavigateToTool('unscramble'); }}
+                    className="px-8 py-4 bg-teal-600 text-white font-black rounded-2xl hover:bg-teal-500 transition-all shadow-lg shadow-teal-600/20 whitespace-nowrap active:scale-95 text-center inline-block"
                   >
                     Open Solver
-                  </button>
+                  </a>
                 </motion.div>
               )}
 
@@ -129,12 +131,13 @@ export const BlogLayout = ({ post, onBack, onNavigateToTool, isDarkMode }: BlogL
             <button className={`p-4 rounded-2xl ${isDarkMode ? 'bg-slate-800 text-teal-400 hover:text-teal-300' : 'bg-white text-teal-600 shadow-sm hover:text-teal-500'} flex items-center gap-2 font-bold transition-all`}>
               <Share2 size={18} /> Share
             </button>
-            <button 
-               onClick={onBack}
+            <a 
+               href="/blog"
+               onClick={(e) => { e.preventDefault(); onBack(); }}
                className={`p-4 rounded-2xl ${isDarkMode ? 'bg-slate-800 text-slate-400 hover:text-slate-300' : 'bg-white text-slate-400 shadow-sm hover:text-slate-600'} flex items-center gap-2 font-bold transition-all`}
             >
               <ArrowLeft size={18} /> Back to List
-            </button>
+            </a>
           </div>
         </div>
       </footer>

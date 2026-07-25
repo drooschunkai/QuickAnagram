@@ -647,23 +647,23 @@ export default function App() {
       {/* Navigation */}
       <nav className={`px-6 md:px-12 py-6 flex flex-col border-b ${isDarkMode ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-white/50'} backdrop-blur-md sticky top-0 z-50`}>
         <div className="flex justify-between items-center w-full">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
+          <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className="flex items-center gap-3 cursor-pointer">
             <img src="/logo.svg" alt="UnscramblerHub Logo" className={`w-10 h-10 rounded-xl shadow-lg ${isDarkMode ? 'shadow-teal-900/20' : 'shadow-teal-100'} object-contain bg-white p-1`} referrerPolicy="no-referrer" />
             <div>
               <span className={`text-xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'} block leading-tight`}>UnscramblerHub</span>
               <span className={`text-[10px] uppercase tracking-widest ${isDarkMode ? 'text-teal-400' : 'text-teal-600'} font-bold`}>Ultimate Word Engine</span>
             </div>
-          </div>
+          </a>
           
           <div className="hidden md:flex items-center gap-8 text-sm font-medium">
             <div className={`flex gap-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-              <button onClick={() => navigateTo('unscrambler')} className={`${view === 'unscrambler' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'unscrambler' ? '' : 'border-transparent'}`}>Unscrambler</button>
-              <button onClick={() => navigateTo('anagram-solver')} className={`${view === 'anagram-solver' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'anagram-solver' ? '' : 'border-transparent'}`}>Anagram Solver</button>
-              <button onClick={() => navigateTo('words-az')} className={`${view === 'words-az' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'words-az' ? '' : 'border-transparent'}`}>Words A-Z</button>
-              <button onClick={() => navigateTo('dictionary')} className={`${view === 'dictionary' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'dictionary' ? '' : 'border-transparent'}`}>Dictionary</button>
-              <button onClick={() => navigateTo('blog')} className={`${view === 'blog' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'blog' ? '' : 'border-transparent'}`}>Blog</button>
-              <button onClick={() => navigateTo('strategy')} className={`${view === 'strategy' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'strategy' ? '' : 'border-transparent'}`}>Strategy Guide</button>
-              <button onClick={() => navigateTo('about')} className={`${view === 'about' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'about' ? '' : 'border-transparent'}`}>About</button>
+              <a href="/unscrambler" onClick={(e) => { e.preventDefault(); navigateTo('unscrambler'); }} className={`${view === 'unscrambler' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'unscrambler' ? '' : 'border-transparent'}`}>Unscrambler</a>
+              <a href="/anagram-solver" onClick={(e) => { e.preventDefault(); navigateTo('anagram-solver'); }} className={`${view === 'anagram-solver' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'anagram-solver' ? '' : 'border-transparent'}`}>Anagram Solver</a>
+              <a href="/words-az" onClick={(e) => { e.preventDefault(); navigateTo('words-az'); }} className={`${view === 'words-az' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'words-az' ? '' : 'border-transparent'}`}>Words A-Z</a>
+              <a href="/dictionary" onClick={(e) => { e.preventDefault(); navigateTo('dictionary'); }} className={`${view === 'dictionary' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'dictionary' ? '' : 'border-transparent'}`}>Dictionary</a>
+              <a href="/blog" onClick={(e) => { e.preventDefault(); navigateTo('blog'); }} className={`${view === 'blog' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'blog' ? '' : 'border-transparent'}`}>Blog</a>
+              <a href="/strategy" onClick={(e) => { e.preventDefault(); navigateTo('strategy'); }} className={`${view === 'strategy' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'strategy' ? '' : 'border-transparent'}`}>Strategy Guide</a>
+              <a href="/about" onClick={(e) => { e.preventDefault(); navigateTo('about'); }} className={`${view === 'about' ? (isDarkMode ? 'text-teal-400 border-teal-400' : 'text-teal-600 border-teal-600') : (isDarkMode ? 'hover:text-teal-400' : 'hover:text-teal-600')} pb-1 border-b-2 transition-colors ${view === 'about' ? '' : 'border-transparent'}`}>About</a>
             </div>
           </div>
 
@@ -760,13 +760,13 @@ export default function App() {
               className="md:hidden overflow-hidden mt-4"
             >
               <div className={`flex flex-col gap-2 p-4 rounded-2xl ${isDarkMode ? 'bg-slate-900 border border-slate-850' : 'bg-slate-50 border border-slate-100'} text-sm font-semibold mt-2`}>
-                <button onClick={() => { navigateTo('unscrambler'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'unscrambler' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Unscrambler</button>
-                <button onClick={() => { navigateTo('anagram-solver'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'anagram-solver' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Anagram Solver</button>
-                <button onClick={() => { navigateTo('words-az'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'words-az' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Words A-Z</button>
-                <button onClick={() => { navigateTo('dictionary'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'dictionary' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Dictionary</button>
-                <button onClick={() => { navigateTo('blog'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'blog' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Blog</button>
-                <button onClick={() => { navigateTo('strategy'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'strategy' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Strategy Guide</button>
-                <button onClick={() => { navigateTo('about'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'about' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>About</button>
+                <a href="/unscrambler" onClick={(e) => { e.preventDefault(); navigateTo('unscrambler'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'unscrambler' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Unscrambler</a>
+                <a href="/anagram-solver" onClick={(e) => { e.preventDefault(); navigateTo('anagram-solver'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'anagram-solver' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Anagram Solver</a>
+                <a href="/words-az" onClick={(e) => { e.preventDefault(); navigateTo('words-az'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'words-az' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Words A-Z</a>
+                <a href="/dictionary" onClick={(e) => { e.preventDefault(); navigateTo('dictionary'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'dictionary' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Dictionary</a>
+                <a href="/blog" onClick={(e) => { e.preventDefault(); navigateTo('blog'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'blog' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Blog</a>
+                <a href="/strategy" onClick={(e) => { e.preventDefault(); navigateTo('strategy'); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'strategy' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>Strategy Guide</a>
+                <a href="/about" onClick={(e) => { e.preventDefault(); navigateTo('about'); setIsMobileMenuOpen(false); }} className={`w-full text-left py-2 px-3 rounded-lg hover:bg-teal-500/10 ${view === 'about' ? (isDarkMode ? 'text-teal-400 bg-teal-400/5' : 'text-teal-600 bg-slate-100') : ''}`}>About</a>
               </div>
             </motion.div>
           )}
@@ -1152,11 +1152,12 @@ export default function App() {
                 {filteredBlogPosts.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {filteredBlogPosts.map((post) => (
-                      <motion.div 
+                      <motion.a 
                         key={post.id} 
+                        href={`/blog/${post.id}`}
                         whileHover={{ y: -8 }}
-                        onClick={() => navigateTo('blog', post.id)} 
-                        className={`p-10 ${isDarkMode ? 'bg-slate-900 border-slate-800/50 hover:shadow-teal-900/10' : 'bg-white border-slate-100 hover:shadow-xl'} border rounded-[2rem] shadow-sm transition-all cursor-pointer flex flex-col h-full`}
+                        onClick={(e) => { e.preventDefault(); navigateTo('blog', post.id); }} 
+                        className={`p-10 ${isDarkMode ? 'bg-slate-900 border-slate-800/50 hover:shadow-teal-900/10' : 'bg-white border-slate-100 hover:shadow-xl'} border rounded-[2rem] shadow-sm transition-all cursor-pointer flex flex-col h-full block`}
                       >
                         <div className={`flex justify-between mb-6 text-[10px] font-black ${isDarkMode ? 'text-teal-400' : 'text-teal-600'} uppercase tracking-widest`}>
                           <span className={`px-2 py-1 ${isDarkMode ? 'bg-teal-400/10' : 'bg-teal-500/10'} rounded`}>{post.category}</span>
@@ -1167,7 +1168,7 @@ export default function App() {
                         <div className={`mt-auto pt-6 border-t ${isDarkMode ? 'border-slate-800' : 'border-slate-100/10'} flex items-center gap-2 ${isDarkMode ? 'text-teal-400' : 'text-teal-600'} font-bold text-sm`}>
                           Read Story <ArrowLeft className="rotate-180" size={14} />
                         </div>
-                      </motion.div>
+                      </motion.a>
                     ))}
                   </div>
                 ) : (
@@ -1279,9 +1280,9 @@ export default function App() {
             </div>
 
             <div className="flex justify-center mt-12">
-              <button onClick={() => navigateTo('home')} className={`flex items-center gap-2 ${isDarkMode ? 'text-teal-400 border-teal-400 hover:bg-teal-400/10' : 'text-teal-700 border-teal-700 hover:bg-teal-50 border'} font-bold px-6 py-3 rounded-2xl transition-colors`}>
+              <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className={`flex items-center gap-2 ${isDarkMode ? 'text-teal-400 border-teal-400 hover:bg-teal-400/10' : 'text-teal-700 border-teal-700 hover:bg-teal-50 border'} font-bold px-6 py-3 rounded-2xl transition-colors`}>
                 <ArrowLeft size={18} /> Back to Home
-              </button>
+              </a>
             </div>
           </div>
         )}
@@ -1381,9 +1382,9 @@ export default function App() {
                 </div>
               ))}
             </div>
-            <button onClick={() => navigateTo('home')} className={`mt-16 flex items-center gap-2 ${isDarkMode ? 'text-teal-400' : 'text-teal-600'} font-bold`}>
+            <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className={`mt-16 flex items-center gap-2 ${isDarkMode ? 'text-teal-400' : 'text-teal-600'} font-bold inline-flex`}>
               <ArrowLeft size={18} /> Back to Home
-            </button>
+            </a>
           </div>
         )}
 
@@ -1489,16 +1490,16 @@ export default function App() {
                   6. Contact Us
                 </h2>
                 <p className="leading-relaxed">
-                  If you have questions about trademarks, terms, or server setups, please reach out via our official contact page at <a href="https://unscramblerhub.com/contact" onClick={(e) => { e.preventDefault(); navigateTo('contact'); }} className="font-semibold underline hover:text-teal-500">https://unscramblerhub.com/contact</a> or send an email directly to <strong>hello@unscramblerhub.com</strong>.
+                  If you have questions about trademarks, terms, or server setups, please reach out via our official contact page at <a href="/contact" onClick={(e) => { e.preventDefault(); navigateTo('contact'); }} className="font-semibold underline hover:text-teal-500">https://unscramblerhub.com/contact</a> or send an email directly to <strong>hello@unscramblerhub.com</strong>.
                 </p>
               </section>
 
             </div>
 
             <div className="flex justify-center mt-12">
-              <button onClick={() => navigateTo('home')} className={`flex items-center gap-2 ${isDarkMode ? 'text-teal-400 border-teal-400 hover:bg-teal-400/10' : 'text-teal-700 border-teal-700 hover:bg-teal-50 border'} font-bold px-6 py-3 rounded-2xl transition-colors`}>
+              <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className={`flex items-center gap-2 ${isDarkMode ? 'text-teal-400 border-teal-400 hover:bg-teal-400/10' : 'text-teal-700 border-teal-700 hover:bg-teal-50 border'} font-bold px-6 py-3 rounded-2xl transition-colors`}>
                 <ArrowLeft size={18} /> Back to Home
-              </button>
+              </a>
             </div>
           </div>
         )}
@@ -1957,9 +1958,9 @@ export default function App() {
             )}
 
             <div className="flex justify-center mt-12">
-              <button onClick={() => navigateTo('home')} className={`flex items-center gap-2 ${isDarkMode ? 'text-teal-400 border-teal-400 hover:bg-teal-400/10' : 'text-teal-700 border-teal-700 hover:bg-teal-50 border'} font-bold px-6 py-3 rounded-2xl transition-colors`}>
+              <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className={`flex items-center gap-2 ${isDarkMode ? 'text-teal-400 border-teal-400 hover:bg-teal-400/10' : 'text-teal-700 border-teal-700 hover:bg-teal-50 border'} font-bold px-6 py-3 rounded-2xl transition-colors`}>
                 <ArrowLeft size={18} /> Back to Home
-              </button>
+              </a>
             </div>
           </div>
         )}
@@ -1968,22 +1969,22 @@ export default function App() {
       <footer className={`px-6 md:px-12 py-10 ${isDarkMode ? 'bg-black text-slate-400' : 'bg-slate-900 text-slate-400'} mt-20 transition-colors duration-300`}>
         <div className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-4 gap-12">
           <div>
-            <div className="flex items-center gap-2 mb-4">
+            <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className="flex items-center gap-2 mb-4">
               <img src="/logo.svg" alt="UnscramblerHub" className="w-6 h-6 rounded object-contain bg-white p-0.5" referrerPolicy="no-referrer" />
               <h4 className="text-white font-bold">UnscramblerHub</h4>
-            </div>
+            </a>
             <p className="text-xs">World's fastest word extraction tool.</p>
           </div>
           <div>
             <h5 className="text-white font-bold mb-4 font-mono uppercase tracking-widest text-[10px]">Tools</h5>
             <ul className="space-y-2 text-xs">
-              <li><button onClick={() => navigateTo('unscrambler')} className="hover:text-teal-400 text-left">Scrabble Unscrambler</button></li>
-              <li><button onClick={() => navigateTo('anagram-solver')} className="hover:text-teal-400 text-left">Anagram Solver</button></li>
-              <li><button onClick={() => navigateTo('words-az')} className="hover:text-teal-400 text-left">A-Z Word Finder</button></li>
+              <li><a href="/unscrambler" onClick={(e) => { e.preventDefault(); navigateTo('unscrambler'); }} className="hover:text-teal-400 text-left block">Scrabble Unscrambler</a></li>
+              <li><a href="/anagram-solver" onClick={(e) => { e.preventDefault(); navigateTo('anagram-solver'); }} className="hover:text-teal-400 text-left block">Anagram Solver</a></li>
+              <li><a href="/words-az" onClick={(e) => { e.preventDefault(); navigateTo('words-az'); }} className="hover:text-teal-400 text-left block">A-Z Word Finder</a></li>
             </ul>
           </div>
-          <div><h5 className="text-white font-bold mb-4 font-mono uppercase tracking-widest text-[10px]">Company</h5><ul className="space-y-2 text-xs"><li><button onClick={() => navigateTo('about')} className="hover:text-teal-400">About</button></li><li><button onClick={() => navigateTo('blog')} className="hover:text-teal-400">Blog</button></li><li><button onClick={() => navigateTo('strategy')} className="hover:text-teal-400 text-left">Strategy Guide</button></li><li><button onClick={() => navigateTo('contact')} className="hover:text-teal-400">Contact</button></li></ul></div>
-          <div><h5 className="text-white font-bold mb-4 font-mono uppercase tracking-widest text-[10px]">Privacy</h5><ul className="space-y-2 text-xs"><li><button onClick={() => navigateTo('policy')} className="hover:text-teal-400">Policy</button></li><li><button onClick={() => navigateTo('terms')} className="hover:text-teal-400">Terms</button></li></ul></div>
+          <div><h5 className="text-white font-bold mb-4 font-mono uppercase tracking-widest text-[10px]">Company</h5><ul className="space-y-2 text-xs"><li><a href="/about" onClick={(e) => { e.preventDefault(); navigateTo('about'); }} className="hover:text-teal-400 block">About</a></li><li><a href="/blog" onClick={(e) => { e.preventDefault(); navigateTo('blog'); }} className="hover:text-teal-400 block">Blog</a></li><li><a href="/strategy" onClick={(e) => { e.preventDefault(); navigateTo('strategy'); }} className="hover:text-teal-400 text-left block">Strategy Guide</a></li><li><a href="/contact" onClick={(e) => { e.preventDefault(); navigateTo('contact'); }} className="hover:text-teal-400 block">Contact</a></li></ul></div>
+          <div><h5 className="text-white font-bold mb-4 font-mono uppercase tracking-widest text-[10px]">Privacy</h5><ul className="space-y-2 text-xs"><li><a href="/policy" onClick={(e) => { e.preventDefault(); navigateTo('policy'); }} className="hover:text-teal-400 block">Policy</a></li><li><a href="/terms" onClick={(e) => { e.preventDefault(); navigateTo('terms'); }} className="hover:text-teal-400 block">Terms</a></li></ul></div>
         </div>
         <div className="max-w-7xl mx-auto w-full pt-12 mt-12 border-t border-slate-800/50">
           <p className="text-[10px] uppercase tracking-widest text-slate-500 font-black mb-4">

@@ -273,11 +273,12 @@ export function AnagramSolverView({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div 
-              onClick={() => navigateTo('blog', 'linguistics-of-letter-blends')}
+            <a 
+              href="/blog/linguistics-of-letter-blends"
+              onClick={(e) => { e.preventDefault(); navigateTo('blog', 'linguistics-of-letter-blends'); }}
               className={`p-5 rounded-xl border cursor-pointer transition-all hover:translate-x-1 ${
                 isDarkMode ? 'bg-slate-900/60 border-slate-800 hover:border-teal-500/30' : 'bg-[#fafafa] border-slate-200 hover:border-teal-400'
-              } flex flex-col justify-between`}
+              } flex flex-col justify-between block`}
             >
               <div className="space-y-2">
                 <span className="text-[9px] font-black uppercase tracking-wider text-teal-500">Cognitive Linguistics</span>
@@ -289,13 +290,14 @@ export function AnagramSolverView({
                 </p>
               </div>
               <span className="text-xs font-semibold text-teal-500 mt-2 block">Read full guide &rarr;</span>
-            </div>
+            </a>
 
-            <div 
-              onClick={() => navigateTo('blog', 'cognitive-benefits-of-word-games')}
+            <a 
+              href="/blog/cognitive-benefits-of-word-games"
+              onClick={(e) => { e.preventDefault(); navigateTo('blog', 'cognitive-benefits-of-word-games'); }}
               className={`p-5 rounded-xl border cursor-pointer transition-all hover:translate-x-1 ${
                 isDarkMode ? 'bg-slate-900/60 border-slate-800 hover:border-teal-500/30' : 'bg-[#fafafa] border-slate-200 hover:border-teal-400'
-              } flex flex-col justify-between`}
+              } flex flex-col justify-between block`}
             >
               <div className="space-y-2">
                 <span className="text-[9px] font-black uppercase tracking-wider text-teal-500">Cognitive Health</span>
@@ -307,7 +309,7 @@ export function AnagramSolverView({
                 </p>
               </div>
               <span className="text-xs font-semibold text-teal-500 mt-2 block">Read full guide &rarr;</span>
-            </div>
+            </a>
           </div>
         </div>
       </section>
